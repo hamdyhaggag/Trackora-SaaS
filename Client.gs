@@ -1,0 +1,623 @@
+// ============================================================
+// تراكورا — Client.gs (FIXED VERSION)
+// ============================================================
+
+const CONFIG = {
+  SPREADSHEET_ID: '1DpbiARHR46jbawxMcC9Dz9VRdMnS6A5NSppcKhblPaE',
+  ADMIN_EMAIL: 'mahmoudsap74@gmail.com',
+  DRIVE_FOLDER_ID: '1CJPhZKqn6YQGQNn-wsWAi6clfeSzPuEe',
+  SYSTEM_NAME: 'تراكورا',
+  ADMIN_URL: 'https://offersworld.github.io/offers-world/admin.html',
+  SHEETS: {
+    PACKAGES: '📦 Packages',
+    ORDERS: '📋 Orders',
+    LOGS: '📝 Logs'
+  }
+};
+
+// ✅ قراءة كلمة المرور من إعدادات السكربت (PropertiesService) للحماية
+const ADMIN_PASSWORD = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD') || '01225949346';
+
+// ============================================================
+// doGet — مع CORS
+// ============================================================
+function doGet(e) {
+  // SaaS Dynamic Routing Override
+  if (e.parameter.spreadsheetId) {
+    CONFIG.SPREADSHEET_ID = e.parameter.spreadsheetId;
+  }
+
+  var action = e.parameter.action || '';
+  var page   = e.parameter.page   || '';
+
+  if (page === 'admin') {
+    return HtmlService
+      .createHtmlOutputFromFile('admin')
+      .setTitle('لوحة تحكم تراكورا')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  if (page === 'tracker') {
+    return HtmlService
+      .createHtmlOutputFromFile('tracker')
+      .setTitle('متابعة الباقات — تراكورا')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  if (action === 'checkPassword') {
+    var password = e.parameter.pass;
+    return respond({ success: password === ADMIN_PASSWORD });
+  }
+
+  if (action === 'packages') {
+    return respond(getPackages(e.parameter.company));
+  }
+
+  if (action === 'orders') {
+    return respond(getAllOrders());
+  }
+
+  if (action === 'stats') {
+    return respond(getAdminStats());
+  }
+
+  if (action === 'getStoreConfig') {
+    return respond(getStoreConfig(e.parameter.c));
+  }
+
+  if (action === 'activity') {
+    return respond(getActivityLog());
+  }
+
+  if (action === 'trackerPackages') {
+    return respond(getTrackerPackages());
+  }
+
+  if (action === 'trackerLogs') {
+    return respond(getTrackerLogs(e.parameter));
+  }
+
+  // ✅ FIX: تمرير all + month + year بدلاً من period
+  if (action === 'trackerSummary') {
+    return respond(getTrackerSummary(e.parameter.all, e.parameter.month, e.parameter.year));
+  }
+
+  if (action === 'getStoreSettings') {
+    return respond(getStoreSettings());
+  }
+
+  return respond({ status: 'ok', system: CONFIG.SYSTEM_NAME });
+}
+
+// ============================================================
+// doPost — مع جميع الإجراءات
+// ============================================================
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000);
+    
+    var data = JSON.parse(e.postData.contents);
+    
+    // SaaS Dynamic Routing Override
+    if (data.spreadsheetId) {
+      CONFIG.SPREADSHEET_ID = data.spreadsheetId;
+    }
+
+    var action = data.action;
+
+    if (action === 'clientLogin') {
+      return respond(sa_authenticateClient(data.username, data.password));
+    }
+
+    if (action === 'sa_login') {
+      return respond(sa_login(data.pass));
+    }
+
+    if (action === 'checkPassword') {
+      return respond({ success: data.pass === ADMIN_PASSWORD });
+    }
+
+    if (!action) {
+      return respond(handleNewOrder(data));
+    }
+
+    if (action === 'updateOrderStatus') {
+      return respond(updateOrderStatus(data.orderId, data.status, data.note));
+    }
+
+    if (action === 'addPackage') {
+      return respond(addPackage(data));
+    }
+
+    if (action === 'updatePackage') {
+      return respond(updatePackage(data));
+    }
+
+    if (action === 'deletePackage') {
+      return respond(deletePackage(data.packageId));
+    }
+
+    if (action === 'addTrackerLog') {
+      return respond(addTrackerLog(data));
+    }
+
+    if (action === 'editTrackerLog' || action === 'updateTrackerLog') {
+      return respond(editTrackerLog(data));
+    }
+
+    if (action === 'deleteTrackerLog') {
+      return respond(deleteTrackerLog(data));
+    }
+
+    if (action === 'checkTrackerPass') {
+      return respond({ success: data.pass === (PropertiesService.getScriptProperties().getProperty('TRACKER_PASSWORD') || 'abeer123') });
+    }
+
+    if (action === 'updateStoreSettings') {
+      return respond(updateStoreSettings(data));
+    }
+
+    return respond({ success: false, message: 'إجراء غير معروف' });
+
+  } catch (err) {
+    logError('doPost', err.toString());
+    return respond({ success: false, error: err.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// ============================================================
+// جلب الباقات
+// ============================================================
+function getPackages(company) {
+  company = company || null;
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(CONFIG.SHEETS.PACKAGES);
+    var data = sheet.getDataRange().getValues();
+    var packages = [];
+
+    for (var i = 2; i < data.length; i++) {
+      var row = data[i];
+      var pkgId      = row[0];
+      var pkgCompany = String(row[1] || '').trim();
+      var pkgName    = String(row[2] || '').trim();
+      var pkgPrice   = Number(row[3]) || 0;
+      var pkgType    = String(row[4] || '').trim();
+      var status     = String(row[5] || '').trim();
+
+      if (!pkgName || status !== 'متاح') continue;
+
+      if (!company || pkgCompany.includes(company)) {
+        packages.push({
+          id:      pkgId,
+          company: pkgCompany,
+          name:    pkgName,
+          price:   pkgPrice,
+          type:    pkgType,
+          status:  status
+        });
+      }
+    }
+
+    packages.sort(function(a, b) { return a.price - b.price; });
+    return packages;
+
+  } catch (err) {
+    logError('getPackages', err.toString());
+    return [];
+  }
+}
+
+// ============================================================
+// ✅ FIX: معالجة الطلب الجديد — أُضيف activationPhone
+// ============================================================
+function handleNewOrder(data) {
+  var orderId = data.orderId || generateOrderId();
+
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(CONFIG.SHEETS.ORDERS);
+    var existing = sheet.getRange('A:A').createTextFinder(String(orderId).trim()).matchEntireCell(true).findNext();
+    if (existing) {
+      return { success: true, orderId: orderId, duplicate: true };
+    }
+  } catch (e) { }
+
+  var proofUrl = '';
+  if (data.proofBase64) {
+    proofUrl = saveBase64File(data.proofBase64, orderId);
+  }
+
+  var row = [
+    orderId,
+    formatDate(new Date()),
+    data.customerName  || '',
+    data.phone         || '',
+    data.company       || '',
+    data.package       || '',
+    data.price         || 0,
+    data.transferRef   || '',
+    data.payment       || '',
+    'معلق',
+    '',
+    data.notes         || '',
+    proofUrl,
+    data.activationPhone || '',
+    data.vodafonePassword || ''
+  ];
+
+  saveOrder(row);
+  addLog('طلب جديد', orderId, (data.company || '') + ' - ' + (data.package || ''));
+  sendAdminNotification(orderId, data, proofUrl);
+
+  return { success: true, orderId: orderId };
+}
+
+// ============================================================
+// دوال إدارة الطلبات
+// ============================================================
+function getAllOrders() {
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  var sheet = ss.getSheetByName(CONFIG.SHEETS.ORDERS);
+  var data = sheet.getDataRange().getValues();
+  var result = [];
+  for (var i = 2; i < data.length; i++) {
+    result.push({
+      orderId:          data[i][0],
+      date:             data[i][1],
+      customerName:     data[i][2],
+      phone:            data[i][3],
+      company:          data[i][4],
+      package:          data[i][5],
+      price:            data[i][6],
+      transferRef:      data[i][7],
+      payment:          data[i][8],
+      status:           data[i][9],
+      activationDate:   data[i][10] || '',
+      notes:            data[i][11],
+      proofImage:       data[i][12],
+      activationPhone:  data[i][13] || '',
+      vodafonePassword: data[i][14] || ''
+    });
+  }
+  return result;
+}
+
+function updateOrderStatus(orderId, newStatus, note) {
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(CONFIG.SHEETS.ORDERS);
+    
+    var findResult = sheet.getRange("A:A").createTextFinder(String(orderId).trim()).matchEntireCell(true).findNext();
+    if (!findResult) return { success: false, message: 'الطلب غير موجود' };
+    
+    var rowIndex = findResult.getRow();
+
+    sheet.getRange(rowIndex, 10).setValue(newStatus);
+
+    if (newStatus === 'تم التفعيل') {
+      var currentActivation = sheet.getRange(rowIndex, 11).getValue();
+      if (!currentActivation) {
+        sheet.getRange(rowIndex, 11).setValue(formatDate(new Date()));
+      }
+    }
+
+    if (note) {
+      var oldNote = sheet.getRange(rowIndex, 12).getValue() || '';
+      var newNote = oldNote + (oldNote ? '\n' : '') + '[' + formatDate(new Date()) + '] ' + note;
+      sheet.getRange(rowIndex, 12).setValue(newNote);
+    }
+
+    addLog('تغيير حالة', orderId, 'إلى ' + newStatus);
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+// ============================================================
+// دوال إدارة الباقات
+// ============================================================
+function addPackage(pkg) {
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(CONFIG.SHEETS.PACKAGES);
+    var newId = generatePackageId();
+    sheet.appendRow([
+      newId,
+      pkg.company || '',
+      pkg.name,
+      pkg.price,
+      pkg.type || '',
+      pkg.status || 'متاح',
+      pkg.notes || '',
+      formatDate(new Date())
+    ]);
+    addLog('إضافة باقة', newId, pkg.name);
+    return { success: true, id: newId };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+function updatePackage(pkg) {
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(CONFIG.SHEETS.PACKAGES);
+    
+    var findResult = sheet.getRange("A:A").createTextFinder(String(pkg.packageId).trim()).matchEntireCell(true).findNext();
+    if (!findResult) return { success: false, message: 'الباقة غير موجودة' };
+    
+    var rowIndex = findResult.getRow();
+
+    sheet.getRange(rowIndex, 2).setValue(pkg.company || '');
+    sheet.getRange(rowIndex, 3).setValue(pkg.name);
+    sheet.getRange(rowIndex, 4).setValue(pkg.price);
+    sheet.getRange(rowIndex, 5).setValue(pkg.type || '');
+    sheet.getRange(rowIndex, 6).setValue(pkg.status || 'متاح');
+    sheet.getRange(rowIndex, 7).setValue(pkg.notes || '');
+    addLog('تحديث باقة', pkg.packageId, pkg.name);
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+function deletePackage(packageId) {
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(CONFIG.SHEETS.PACKAGES);
+    
+    var findResult = sheet.getRange("A:A").createTextFinder(String(packageId).trim()).matchEntireCell(true).findNext();
+    if (!findResult) return { success: false, message: 'الباقة غير موجودة' };
+    
+    var rowIndex = findResult.getRow();
+    sheet.deleteRow(rowIndex);
+    addLog('حذف باقة', packageId, '');
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+function generatePackageId() {
+  return 'PKG-' + Utilities.formatDate(new Date(), 'Africa/Cairo', 'yyMMddHHmmss') + '-' + Math.floor(Math.random() * 1000);
+}
+
+// ============================================================
+// سجل النشاطات
+// ============================================================
+function getActivityLog() {
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(CONFIG.SHEETS.LOGS);
+    var data = sheet.getDataRange().getValues();
+    var logs = [];
+    for (var i = data.length - 1; i >= 1; i--) {
+      logs.push({
+        timestamp: data[i][0],
+        action:    data[i][1],
+        orderId:   data[i][2],
+        details:   data[i][3]
+      });
+    }
+    return logs;
+  } catch (e) {
+    return [];
+  }
+}
+
+function addLog(action, orderId, details) {
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(CONFIG.SHEETS.LOGS);
+    sheet.appendRow([formatDate(new Date()), action, orderId, details]);
+  } catch (e) {}
+}
+
+// ============================================================
+// إحصائيات
+// ============================================================
+function getAdminStats() {
+  var orders = getAllOrders();
+  var total = orders.length;
+  var pending = 0, active = 0, cancelled = 0, revenue = 0;
+
+  orders.forEach(function(order) {
+    var st = order.status || '';
+    if (st.includes('معلق'))   pending++;
+    else if (st.includes('تم')) active++;
+    else if (st.includes('ملغ')) cancelled++;
+    if (st.includes('تم')) revenue += Number(order.price) || 0;
+  });
+
+  return { total: total, pending: pending, active: active, cancelled: cancelled, revenue: revenue };
+}
+
+// ============================================================
+// دوال مساعدة
+// ============================================================
+function respond(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function saveBase64File(base64Data, orderId) {
+  try {
+    var matches = base64Data.match(/^data:(.+);base64,(.*)$/);
+    if (!matches) return '';
+    var mimeType  = matches[1];
+    var bytes     = Utilities.base64Decode(matches[2]);
+    var extension = mimeType.includes('png') ? 'png' : 'jpg';
+    var blob   = Utilities.newBlob(bytes, mimeType, orderId + '.' + extension);
+    var folder = DriveApp.getFolderById(CONFIG.DRIVE_FOLDER_ID);
+    var file   = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return file.getUrl();
+  } catch (err) {
+    logError('saveBase64File', err.toString());
+    return '';
+  }
+}
+
+function saveOrder(row) {
+  var ss    = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  var sheet = ss.getSheetByName(CONFIG.SHEETS.ORDERS);
+  sheet.appendRow(row);
+}
+
+function generateOrderId() {
+  var now  = new Date();
+  var date = Utilities.formatDate(now, 'Africa/Cairo', 'MMddHHmm');
+  var rand = Math.floor(1000 + Math.random() * 9000);
+  return 'ORD-' + date + '-' + rand;
+}
+
+function formatDate(d) {
+  return Utilities.formatDate(d, 'Africa/Cairo', 'dd/MM/yyyy HH:mm:ss');
+}
+
+function logError(fn, msg) {
+  console.error(fn + ' => ' + msg);
+}
+
+// ============================================================
+// ✅ FIX: إرسال الإيميل
+// ============================================================
+function sendAdminNotification(orderId, data, proofImageUrl) {
+  var subject = '[تراكورا] طلب جديد - ' + orderId;
+
+  var plainText = [
+    'طلب جديد في تراكورا',
+    '================================',
+    'رقم الطلب      : ' + orderId,
+    'الاسم           : ' + (data.customerName   || '-'),
+    'الواتساب        : ' + (data.phone           || '-'),
+    'رقم التفعيل    : ' + (data.activationPhone  || '-'),
+    'الشركة          : ' + (data.company          || '-'),
+    'الباقة          : ' + (data.package          || '-'),
+    'السعر           : ' + (data.price            || 0)  + ' جنيه',
+    'طريقة الدفع    : ' + (data.payment           || '-'),
+    'رقم التحويل    : ' + (data.transferRef        || '-'),
+    'ملاحظات        : ' + (data.notes             || 'لا يوجد'),
+    'اثبات الدفع    : ' + (proofImageUrl           || 'لا يوجد'),
+    '================================'
+  ].join('\n');
+
+  var now = Utilities.formatDate(new Date(), 'Africa/Cairo', 'dd/MM/yyyy - hh:mm a');
+
+  var proofSection = proofImageUrl
+    ? '<tr><td style="padding:12px 20px;border-bottom:1px solid #eee;width:38%;color:#888;font-size:13px;">اثبات الدفع</td><td style="padding:12px 20px;border-bottom:1px solid #eee;"><a href="' + proofImageUrl + '" style="display:inline-block;background:#7B2FBE;color:white;padding:8px 22px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:bold;">عرض الايصال</a></td></tr>'
+    : '<tr><td style="padding:12px 20px;border-bottom:1px solid #eee;color:#888;font-size:13px;">اثبات الدفع</td><td style="padding:12px 20px;border-bottom:1px solid #eee;color:#aaa;">لا يوجد</td></tr>';
+
+  var htmlBody = '<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>@media only screen and (max-width:480px){.email-wrap{padding:12px 0!important;}.email-body{border-radius:0!important;}.row-label{width:30%!important;padding:10px 12px!important;font-size:12px!important;}.row-value{padding:10px 12px!important;font-size:13px!important;}.header-title{font-size:18px!important;}.header-pad{padding:20px 12px!important;}.btn-admin{padding:12px 20px!important;font-size:13px!important;}}</style></head><body style="margin:0;padding:0;background:#F4F6F9;font-family:Arial,sans-serif;direction:rtl;">'
+    + '<table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F6F9;" class="email-wrap"><tr><td align="center" style="padding:24px 8px;">'
+    + '<table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);max-width:600px;" class="email-body">'
+    + '<tr><td class="header-pad" style="background:linear-gradient(135deg,#7B2FBE,#FF6B00);padding:28px 20px;text-align:center;">'
+    + '<h1 class="header-title" style="color:white;margin:0;font-size:22px;font-weight:bold;">تراكورا</h1>'
+    + '<p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:13px;">طلب جديد بانتظار المراجعة</p></td></tr>'
+    + '<tr><td style="padding:16px;text-align:center;background:#FAFAFA;border-bottom:2px solid #eee;">'
+    + '<span style="display:inline-block;background:#7B2FBE;color:white;padding:8px 22px;border-radius:30px;font-size:13px;font-weight:bold;word-break:break-all;">' + orderId + '</span>'
+    + '<p style="margin:6px 0 0;color:#999;font-size:11px;">' + now + '</p></td></tr>'
+    + '<tr><td style="padding:6px 0;"><table width="100%" cellpadding="0" cellspacing="0">'
+    + '<tr style="background:#F9F5FF;"><td class="row-label" style="padding:12px 16px;border-bottom:1px solid #eee;width:35%;color:#888;font-size:13px;word-break:keep-all;">الاسم</td><td class="row-value" style="padding:12px 16px;border-bottom:1px solid #eee;word-break:break-word;"><strong style="color:#1a1a2e;font-size:14px;">' + (data.customerName || '-') + '</strong></td></tr>'
+    + '<tr><td class="row-label" style="padding:12px 16px;border-bottom:1px solid #eee;color:#888;font-size:13px;">رقم الواتساب</td><td class="row-value" style="padding:12px 16px;border-bottom:1px solid #eee;"><a href="https://wa.me/2' + (data.phone || '') + '" style="color:#25D366;font-weight:bold;text-decoration:none;font-size:14px;direction:ltr;display:inline-block;">' + (data.phone || '-') + '</a></td></tr>'
+    + '<tr style="background:#F9F5FF;"><td class="row-label" style="padding:12px 16px;border-bottom:1px solid #eee;color:#888;font-size:13px;">رقم التفعيل</td><td class="row-value" style="padding:12px 16px;border-bottom:1px solid #eee;"><strong style="color:#1a1a2e;direction:ltr;display:inline-block;">' + (data.activationPhone || '-') + '</strong></td></tr>'
+    + '<tr><td class="row-label" style="padding:12px 16px;border-bottom:1px solid #eee;color:#888;font-size:13px;">الشركة</td><td class="row-value" style="padding:12px 16px;border-bottom:1px solid #eee;"><strong style="color:#1a1a2e;">' + (data.company || '-') + '</strong></td></tr>'
+    + '<tr style="background:#F9F5FF;"><td class="row-label" style="padding:12px 16px;border-bottom:1px solid #eee;color:#888;font-size:13px;">الباقة</td><td class="row-value" style="padding:12px 16px;border-bottom:1px solid #eee;word-break:break-word;"><strong style="color:#7B2FBE;font-size:14px;">' + (data.package || '-') + '</strong></td></tr>'
+    + '<tr><td class="row-label" style="padding:12px 16px;border-bottom:1px solid #eee;color:#888;font-size:13px;">السعر</td><td class="row-value" style="padding:12px 16px;border-bottom:1px solid #eee;"><strong style="color:#22C55E;font-size:17px;">' + (data.price || 0) + ' جنيه</strong></td></tr>'
+    + '<tr style="background:#F9F5FF;"><td class="row-label" style="padding:12px 16px;border-bottom:1px solid #eee;color:#888;font-size:13px;">طريقة الدفع</td><td class="row-value" style="padding:12px 16px;border-bottom:1px solid #eee;"><span style="background:#EEE;padding:3px 12px;border-radius:20px;font-size:12px;">' + (data.payment || '-') + '</span></td></tr>'
+    + '<tr><td class="row-label" style="padding:12px 16px;border-bottom:1px solid #eee;color:#888;font-size:13px;">رقم التحويل</td><td class="row-value" style="padding:12px 16px;border-bottom:1px solid #eee;"><code style="background:#f0f0f0;padding:3px 10px;border-radius:6px;font-size:13px;">' + (data.transferRef || '-') + '</code></td></tr>'
+    + '<tr style="background:#F9F5FF;"><td class="row-label" style="padding:12px 16px;border-bottom:1px solid #eee;color:#888;font-size:13px;">ملاحظات</td><td class="row-value" style="padding:12px 16px;border-bottom:1px solid #eee;color:#555;font-style:italic;word-break:break-word;">' + (data.notes || 'لا يوجد') + '</td></tr>'
+    + (data.vodafonePassword ? '<tr style="background:#FFF5F5;"><td class="row-label" style="padding:12px 16px;border-bottom:1px solid #eee;color:#DC2626;font-size:13px;font-weight:bold;">🔑 باسورد فودافون</td><td class="row-value" style="padding:12px 16px;border-bottom:1px solid #eee;"><code style="background:#FEE2E2;color:#DC2626;padding:4px 12px;border-radius:6px;font-size:14px;font-weight:bold;word-break:break-all;">' + data.vodafonePassword + '</code></td></tr>' : '')
+    + (String(data.company || '').includes('اتصالات') ? '<tr style="background:#EFF6FF;"><td class="row-label" style="padding:12px 16px;border-bottom:1px solid #eee;color:#1D4ED8;font-size:13px;font-weight:bold;">📲 آلية التفعيل</td><td class="row-value" style="padding:12px 16px;border-bottom:1px solid #eee;color:#1D4ED8;font-weight:bold;word-break:break-word;">ابعت للعميل كود التفعيل — ينتظر الرد على واتساب</td></tr>' : '')
+    + proofSection
+    + '</table></td></tr>'
+    + '<tr><td style="padding:24px 16px;text-align:center;"><a href="' + CONFIG.ADMIN_URL + '" class="btn-admin" style="display:inline-block;background:linear-gradient(135deg,#7B2FBE,#FF6B00);color:white;padding:13px 32px;border-radius:12px;text-decoration:none;font-weight:bold;font-size:14px;">فتح لوحة التحكم</a></td></tr>'
+    + '<tr><td style="background:#F4F6F9;padding:14px;text-align:center;border-top:1px solid #eee;"><p style="margin:0;color:#aaa;font-size:11px;">تراكورا &mdash; هذا البريد تلقائي لا ترد عليه</p></td></tr>'
+    + '</table></td></tr></table></body></html>';
+
+  GmailApp.sendEmail(CONFIG.ADMIN_EMAIL, subject, plainText, { htmlBody: htmlBody, name: 'تراكورا' });
+}
+
+// ============================================================
+// اختبارات
+// ============================================================
+function testEmail() {
+  var fakeData = {
+    customerName:    'حمدي حجاج',
+    phone:           '01154620997',
+    activationPhone: '01154620997',
+    company:         'وي',
+    package:         '10,000 ميجا + 1000 دقيقة',
+    price:           210,
+    payment:         'انستا باي',
+    transferRef:     '7363636',
+    notes:           'لا يوجد'
+  };
+  sendAdminNotification('ORD-TEST-0001', fakeData, '');
+  console.log('تم ارسال الايميل التجريبي');
+}
+
+function testSystem() {
+  Logger.log('النظام يعمل بنجاح');
+}
+
+// ============================================================
+// ⚙️ إعدادات المتجر — قراءة وكتابة من شيت Settings
+// ============================================================
+var SETTINGS_SHEET = '⚙️ Settings';
+var SETTINGS_KEYS = ['phone1Name','phone1','phone2Name','phone2','whatsappGroup','guaranteeLink','instapayNumber','cashNumber'];
+
+function getSettingsSheet_() {
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  var sh = ss.getSheetByName(SETTINGS_SHEET);
+  if (!sh) {
+    // إنشاء الشيت لأول مرة إذا لم يكن موجوداً
+    sh = ss.insertSheet(SETTINGS_SHEET);
+    sh.getRange(1,1,1,2).setValues([['Key','Value']]);
+    sh.getRange(1,1,1,2).setBackground('#1a1a2e').setFontColor('#fff').setFontWeight('bold');
+    SETTINGS_KEYS.forEach(function(k){ sh.appendRow([k,'']); });
+  }
+  return sh;
+}
+
+function getStoreSettings() {
+  try {
+    var sh = getSettingsSheet_();
+    var data = sh.getDataRange().getValues();
+    var settings = {};
+    for (var i = 1; i < data.length; i++) {
+      settings[data[i][0]] = data[i][1] || '';
+    }
+    return { success: true, settings: settings };
+  } catch(err) {
+    return { success: false, error: err.toString() };
+  }
+}
+
+function updateStoreSettings(data) {
+  try {
+    var sh = getSettingsSheet_();
+    var rows = sh.getDataRange().getValues();
+    SETTINGS_KEYS.forEach(function(key) {
+      if (data[key] === undefined) return;
+      var found = false;
+      for (var i = 1; i < rows.length; i++) {
+        if (rows[i][0] === key) {
+          sh.getRange(i + 1, 2).setValue(data[key]);
+          found = true;
+          break;
+        }
+      }
+      if (!found) { sh.appendRow([key, data[key]]); }
+    });
+    return { success: true };
+  } catch(err) {
+    return { success: false, error: err.toString() };
+  }
+}

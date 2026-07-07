@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin — Offers World SaaS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    :root {
+      --bg: #050508;
+      --surface: #0a0a10;
+      --surface-2: rgba(18, 15, 30, 0.6);
+      --gold: #f5c518;
+      --gold-dim: #d4a017;
+      --gold-glow: rgba(245, 197, 24, 0.15);
+      --border: rgba(255, 255, 255, 0.05);
+      --border-hover: rgba(245, 197, 24, 0.25);
+      --text: #f0f0f5;
+      --muted: #8b8b9e;
+      --green: #34d399;
+      --red: #fb7185;
+      --orange: #fb923c;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+    html, body { min-height: 100vh; background: var(--bg); color: var(--text); overflow-x: hidden; }
+
+    /* ── Background ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image: linear-gradient(rgba(245,197,24,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(245,197,24,0.018) 1px, transparent 1px);
+      background-size: 80px 80px; pointer-events: none;
+    }
+    .orb { position: fixed; border-radius: 50%; filter: blur(130px); pointer-events: none; z-index: 0; animation: drift 30s ease-in-out infinite alternate; }
+    .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, rgba(124,58,237,0.25), transparent 70%); top: -200px; right: -150px; }
+    .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(245,197,24,0.12), transparent 70%); bottom: -100px; left: -100px; animation-delay: -10s; }
+    @keyframes drift { 0%{transform:translate(0,0)scale(1)} 50%{transform:translate(40px,-60px)scale(1.08)} 100%{transform:translate(0,0)scale(1)} }
+
+    /* ── Glass Panel ── */
+    .panel {
+      position: relative; z-index: 10;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      backdrop-filter: blur(20px);
+    }
+
+    /* ── LOGIN ── */
+    #loginScreen {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg);
+      transition: opacity 0.5s;
+    }
+    .login-card {
+      width: 100%; max-width: 400px; margin: 20px;
+      background: linear-gradient(145deg, rgba(20,14,40,0.97), rgba(10,7,20,0.99));
+      border: 1px solid var(--border);
+      border-radius: 28px; padding: 50px 40px; text-align: center;
+      position: relative; overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+      animation: cardIn 0.7s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes cardIn { from{opacity:0;transform:translateY(30px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+    .login-card::before { content:''; position:absolute; top:0; left:10%; right:10%; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); opacity:.5; }
+    .login-crown { font-size:3rem; display:block; margin-bottom:10px; filter:drop-shadow(0 0 20px rgba(245,197,24,.5)); animation:pulse 3s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{filter:drop-shadow(0 0 15px rgba(245,197,24,.4))} 50%{filter:drop-shadow(0 0 30px rgba(245,197,24,.8))} }
+    .login-title { font-size:1.9rem; font-weight:900; margin-bottom:6px; background:linear-gradient(135deg,#fff 30%,var(--gold)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    .login-sub { color:var(--muted); font-size:.88rem; margin-bottom:32px; }
+    .login-input {
+      width:100%; padding:15px 20px; background:rgba(255,255,255,.03);
+      border:1px solid rgba(245,197,24,.12); border-radius:14px;
+      color:#fff; font-size:1rem; font-family:'Cairo'; outline:none;
+      transition:all .3s; text-align:center; letter-spacing:3px; margin-bottom:16px;
+    }
+    .login-input:focus { border-color:rgba(245,197,24,.45); background:rgba(245,197,24,.04); box-shadow:0 0 0 4px rgba(245,197,24,.06); }
+    .login-input::placeholder { letter-spacing:1px; color:rgba(255,255,255,.2); font-size:1.2rem; }
+    .btn-gold {
+      width:100%; padding:15px; background:linear-gradient(135deg,#d4a017,#f5c518,#d4a017);
+      color:#0a0806; font-weight:900; font-size:1rem; border:none; border-radius:14px;
+      cursor:pointer; font-family:'Cairo'; transition:all .4s;
+      box-shadow:0 8px 30px rgba(245,197,24,.2); position:relative; overflow:hidden;
+    }
+    .btn-gold:hover { box-shadow:0 12px 40px rgba(245,197,24,.35); transform:translateY(-2px); }
+
+    /* ── MAIN APP ── */
+    #dashboardApp { position:relative; z-index:10; min-height:100vh; padding:40px 24px; max-width:1250px; margin:0 auto; display:none; }
+
+    header { display:flex; justify-content:space-between; align-items:center; margin-bottom:40px; flex-wrap:wrap; gap:20px; }
+    .page-title-wrap {
+      display: flex; flex-direction: column; gap: 4px; border-right: 3px solid var(--gold); padding-right: 16px;
+    }
+    .page-title { font-size:2rem; font-weight:900; line-height: 1.1; background:linear-gradient(135deg,#fff 40%,var(--gold)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    .page-sub { color:var(--muted); font-size:0.95rem; font-weight: 600; }
+
+    .header-actions { display:flex; gap:16px; }
+    .btn-outline {
+      display:flex; align-items:center; gap:8px;
+      padding:12px 20px; background:rgba(255,255,255,.02); border:1px solid var(--border);
+      color:#fff; border-radius:14px; cursor:pointer; font-family:'Cairo'; font-size:.95rem; font-weight:600;
+      transition:all .3s cubic-bezier(0.16,1,0.3,1); backdrop-filter: blur(10px);
+    }
+    .btn-outline:hover { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,0.15); transform:translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    .btn-add {
+      display:flex; align-items:center; gap:8px;
+      padding:12px 24px; background:linear-gradient(135deg,#d4a017,var(--gold));
+      color:#0a0806; border:none; border-radius:14px; cursor:pointer; font-family:'Cairo';
+      font-weight:800; font-size:1rem; transition:all .3s cubic-bezier(0.16,1,0.3,1);
+      box-shadow:0 8px 25px rgba(245,197,24,.25); position: relative; overflow: hidden;
+    }
+    .btn-add::after {
+      content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);
+      transform:translateX(-100%); transition:0.5s;
+    }
+    .btn-add:hover { box-shadow:0 12px 35px rgba(245,197,24,.4); transform:translateY(-2px); }
+    .btn-add:hover::after { transform:translateX(100%); }
+
+    /* Stats */
+    .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:36px; }
+    .stat-card {
+      padding:24px; border-radius:22px;
+      background:var(--surface-2); border:1px solid var(--border);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.02);
+      display:flex; align-items:center; gap:20px;
+      transition:all .4s cubic-bezier(0.16,1,0.3,1); position: relative; overflow: hidden;
+    }
+    .stat-card:hover { border-color:var(--border-hover); transform:translateY(-4px); box-shadow: 0 15px 40px rgba(0,0,0,0.4), 0 0 30px rgba(245,197,24,0.05); }
+    .stat-card::after { content:''; position:absolute; right:0; top:0; bottom:0; width:60px; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.03)); pointer-events:none; }
+    .stat-icon { width:56px; height:56px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; flex-shrink:0; position:relative; }
+    .stat-icon::before { content:''; position:absolute; inset:-4px; border-radius:20px; border:1px dashed currentColor; opacity:0.3; animation: spin 20s linear infinite; }
+    .stat-num { font-size:2.2rem; font-weight:900; line-height:1; font-feature-settings: "tnum"; }
+    .stat-lbl { font-size:0.85rem; color:var(--muted); margin-top:6px; font-weight:600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Table */
+    .table-wrap {
+      border-radius:22px; overflow:x-auto; border:1px solid var(--border);
+      background:var(--surface-2); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    }
+    table { width:100%; border-collapse:collapse; min-width: 900px; }
+    thead tr { background:rgba(0,0,0,0.3); border-bottom:1px solid rgba(255,255,255,0.05); }
+    th { padding:18px 24px; font-size:.85rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:1px; text-align:right; white-space:nowrap; }
+    th:last-child { text-align:left; }
+    tbody tr { border-bottom:1px solid rgba(255,255,255,.02); transition:all .3s; }
+    tbody tr:last-child { border:none; }
+    tbody tr:hover { background:rgba(255,255,255,.02); }
+    td { padding:20px 24px; font-size:.95rem; vertical-align: middle; }
+
+    .badge { display:inline-flex; align-items:center; justify-content:center; padding:6px 14px; border-radius:100px; font-size:.78rem; font-weight:800; box-shadow: inset 0 2px 4px rgba(255,255,255,.1); }
+    .badge-active { background:rgba(74,222,128,.12); color:var(--green); border:1px solid rgba(74,222,128,.2); }
+    .badge-trial { background:rgba(245,197,24,.12); color:var(--gold); border:1px solid rgba(245,197,24,.2); }
+    .badge-stopped { background:rgba(248,113,113,.12); color:var(--red); border:1px solid rgba(248,113,113,.2); }
+
+    .action-btns { display:flex; gap:8px; justify-content:flex-end; opacity:.3; transition:.3s; }
+    tbody tr:hover .action-btns { opacity:1; }
+    .act-btn { width:34px; height:34px; border-radius:10px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.3s; }
+    .act-edit { background:rgba(96,165,250,.1); color:#60a5fa; }
+    .act-edit:hover { background:rgba(96,165,250,.2); }
+    .act-toggle { background:rgba(251,146,60,.1); color:var(--orange); }
+    .act-toggle:hover { background:rgba(251,146,60,.2); }
+    .act-del { background:rgba(248,113,113,.1); color:var(--red); }
+    .act-del:hover { background:rgba(248,113,113,.2); }
+
+    #loadingRow, #emptyRow { text-align:center; padding:60px; color:var(--muted); }
+    .spinner { width:36px; height:36px; border:3px solid rgba(245,197,24,.15); border-top-color:var(--gold); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 14px; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    /* Modal */
+    .modal-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.7); backdrop-filter:blur(10px); display:none; align-items:center; justify-content:center; padding:20px; }
+    .modal-overlay.open { display:flex; }
+    .modal-card {
+      width:100%; max-width:580px;
+      background:linear-gradient(145deg,rgba(20,14,40,.98),rgba(10,7,20,.99));
+      border:1px solid var(--border); border-radius:26px; overflow:hidden;
+      animation:cardIn .4s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .modal-topbar { height:3px; background:linear-gradient(90deg,var(--gold-dim),var(--gold),var(--gold-dim)); }
+    .modal-body { padding:36px 36px 30px; }
+    .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; }
+    .modal-title { font-size:1.4rem; font-weight:800; color:#fff; }
+    .modal-close { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1.4rem; line-height:1; transition:.2s; }
+    .modal-close:hover { color:#fff; }
+
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px; }
+    .form-group { display:flex; flex-direction:column; gap:8px; }
+    .form-group.full { grid-column:1/-1; }
+    label { font-size:.83rem; font-weight:700; color:rgba(232,224,240,.7); }
+    .form-control {
+      padding:12px 16px; background:rgba(255,255,255,.04);
+      border:1px solid var(--border); border-radius:12px;
+      color:#fff; font-size:.9rem; font-family:'Cairo'; outline:none; transition:.3s;
+    }
+    .form-control:focus { border-color:rgba(245,197,24,.4); background:rgba(245,197,24,.04); }
+    select.form-control option { background:#0c0916; }
+
+    .auto-badge {
+      padding:12px 16px; background:rgba(74,222,128,.07);
+      border:1px solid rgba(74,222,128,.15); border-radius:12px;
+      color:#86efac; font-size:.82rem; display:flex; align-items:center; gap:8px;
+    }
+
+    .modal-footer { border-top:1px solid var(--border); padding:20px 36px 28px; display:flex; justify-content:flex-end; gap:12px; }
+    .btn-cancel { padding:10px 24px; background:rgba(255,255,255,.05); border:1px solid var(--border); color:var(--muted); border-radius:12px; cursor:pointer; font-family:'Cairo'; transition:.3s; }
+    .btn-cancel:hover { color:#fff; }
+    .btn-save { padding:11px 28px; background:linear-gradient(135deg,#c9960f,var(--gold)); color:#0a0806; font-weight:900; border:none; border-radius:12px; cursor:pointer; font-family:'Cairo'; font-size:.95rem; transition:.3s; }
+    .btn-save:hover { box-shadow:0 6px 20px rgba(245,197,24,.3); transform:translateY(-1px); }
+
+    @media(max-width:720px) {
+      .stats-grid { grid-template-columns:1fr; }
+      .form-grid { grid-template-columns:1fr; }
+      .modal-body, .modal-footer { padding-left:22px; padding-right:22px; }
+      th:nth-child(4), td:nth-child(4) { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- ══ LOGIN ══ -->
+  <div id="loginScreen">
+    <div class="login-card">
+      <span class="login-crown">👑</span>
+      <h1 class="login-title">Super Admin</h1>
+      <p class="login-sub">لوحة إدارة عملاء المنصة — م. حمدي حجاج (المدير العام)</p>
+      <form onsubmit="handleLogin(event)">
+        <input type="password" id="adminPass" class="login-input" required placeholder="●●●●●●●●" dir="ltr">
+        <button type="submit" class="btn-gold" id="loginBtn">تسجيل الدخول</button>
+      </form>
+    </div>
+  </div>
+
+    <div id="dashboardApp">
+    <header>
+      <div class="page-title-wrap">
+        <h1 class="page-title">إدارة العملاء</h1>
+        <p class="page-sub">لوحة إدارة اشتراكات المنصة وقواعد البيانات المنعزلة</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn-outline" onclick="fetchClients()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          تحديث
+        </button>
+        <button class="btn-add" onclick="openModal()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          عميل جديد
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(245,197,24,.08);color:var(--gold);">👥</div>
+        <div><div class="stat-num" id="sTotal">0</div><div class="stat-lbl">إجمالي العملاء</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(74,222,128,.08);color:var(--green);">✅</div>
+        <div><div class="stat-num" style="color:var(--green)" id="sActive">0</div><div class="stat-lbl">حسابات مفعّلة</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(248,113,113,.08);color:var(--red);">🔒</div>
+        <div><div class="stat-num" style="color:var(--red)" id="sSus">0</div><div class="stat-lbl">حسابات موقوفة</div></div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>الكود</th>
+            <th>الشركة</th>
+            <th>المستخدم</th>
+            <th>معرف الشيت</th>
+            <th>الحالة</th>
+            <th>الانتهاء</th>
+            <th style="text-align:left;">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr id="loadingRow">
+            <td colspan="7">
+              <div class="spinner"></div>
+              جاري التحميل...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="emptyRow" style="display:none; text-align:center; padding:60px; color:var(--muted);">
+      <div style="font-size:3rem; margin-bottom:16px; opacity:.3;">📭</div>
+      <div style="font-size:1.1rem;">لا يوجد عملاء حتى الآن</div>
+      <div style="font-size:.85rem; margin-top:8px;">اضغط "عميل جديد" لإضافة أول عميل</div>
+    </div>
+  </div><!-- /dashboardApp -->
+
+  <!-- ══ MODAL ══ -->
+  <div class="modal-overlay" id="clientModal" onclick="closeModalOutside(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-topbar"></div>
+      <div class="modal-body">
+        <div class="modal-header">
+          <div class="modal-title" id="modalTitle">إضافة عميل جديد</div>
+          <button class="modal-close" onclick="closeModal()">×</button>
+        </div>
+        <form id="clientForm" onsubmit="saveClient(event)">
+          <input type="hidden" id="cId">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>اسم الشركة / النظام</label>
+              <input type="text" id="cCompany" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>تاريخ الانتهاء</label>
+              <input type="date" id="cExpiry" class="form-control">
+            </div>
+            <div class="form-group">
+              <label>اسم المستخدم</label>
+              <input type="text" id="cUser" class="form-control" required dir="ltr">
+            </div>
+            <div class="form-group">
+              <label>كلمة المرور</label>
+              <input type="text" id="cPass" class="form-control" required dir="ltr">
+            </div>
+            <div class="form-group">
+              <label>الحالة</label>
+              <select id="cStatus" class="form-control">
+                <option value="مفعل">مفعل</option>
+                <option value="فترة تجريبية" selected>فترة تجريبية</option>
+                <option value="موقوف">موقوف</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>العلامة التجارية (Brand Name)</label>
+              <input type="text" id="cBrand" class="form-control" placeholder="مثال: متجر الهواتف">
+            </div>
+            <div class="form-group full">
+              <label>رابط اللوجو الخاص بالعميل (Logo URL)</label>
+              <input type="text" id="cLogo" class="form-control" placeholder="https://example.com/logo.png" dir="ltr">
+            </div>
+
+            <div class="form-group full" style="margin-top:10px;">
+              <div style="border-top:1px dashed var(--border); padding-top:16px;"></div>
+              <b>إعدادات المتجر (اختياري)</b>
+            </div>
+            
+            <div class="form-group">
+              <label>اسم جهة اتصال 1</label>
+              <input type="text" id="cPhone1Name" class="form-control" placeholder="مثال: رحمه">
+            </div>
+            <div class="form-group">
+              <label>رقم جهة اتصال 1</label>
+              <input type="text" id="cPhone1" class="form-control" placeholder="مثال: 01555435556">
+            </div>
+            <div class="form-group">
+              <label>اسم جهة اتصال 2</label>
+              <input type="text" id="cPhone2Name" class="form-control" placeholder="مثال: رجب">
+            </div>
+            <div class="form-group">
+              <label>رقم جهة اتصال 2</label>
+              <input type="text" id="cPhone2" class="form-control" placeholder="مثال: 01208666900">
+            </div>
+            <div class="form-group">
+              <label>رابط جروب واتساب</label>
+              <input type="text" id="cWhatsappGroup" class="form-control" dir="ltr" placeholder="https://chat.whatsapp.com/...">
+            </div>
+            <div class="form-group">
+              <label>رابط الضمان</label>
+              <input type="text" id="cGuaranteeLink" class="form-control" dir="ltr" placeholder="https://facebook.com/...">
+            </div>
+            <div class="form-group">
+              <label>رقم إنستا باي</label>
+              <input type="text" id="cInstapayNumber" class="form-control" placeholder="مثال: 01284277707">
+            </div>
+            <div class="form-group">
+              <label>رقم كاش</label>
+              <input type="text" id="cCashNumber" class="form-control" placeholder="مثال: 01120228568">
+            </div>
+            <div class="form-group full">
+              <label>ملاحظات داخلية</label>
+              <input type="text" id="cNotes" class="form-control">
+            </div>
+          </div>
+          <div class="auto-badge">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            ✨ سيتم إنشاء قاعدة بيانات منعزلة تلقائياً لهذا العميل في Google Drive
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal()">إلغاء</button>
+        <button class="btn-save" id="saveBtn" onclick="saveClient(event)">حفظ العميل</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbybcWcZJZsbolFQFAt8Kl95Lptm_Xvcn9zb168j1_YFfSJaS27HfOS1z8WhRQOKorKY5Q/exec';
+    let stateClients = [];
+
+    const Swalx = Swal.mixin({ toast:true, position:'top-end', showConfirmButton:false, timer:3000, timerProgressBar:true, background:'#0c0916', color:'#e8e0f0', iconColor:'#f5c518' });
+
+    /* ── Auth ── */
+    function handleLogin(e) {
+      e.preventDefault();
+      const pass = document.getElementById('adminPass').value;
+      const btn  = document.getElementById('loginBtn');
+      btn.innerHTML = '⏳'; btn.style.opacity='.7';
+
+      if (window.google && google.script && google.script.run) {
+        google.script.run.withSuccessHandler(res => {
+          if (res.success) { showDash(); } else { Swalx.fire({ icon:'error', title:'كلمة المرور غير صحيحة' }); btn.innerHTML='تسجيل الدخول'; btn.style.opacity='1'; }
+        }).sa_login(pass);
+      } else {
+        // local bypass
+        setTimeout(() => showDash(), 700);
+      }
+    }
+
+    function showDash() {
+      document.getElementById('loginScreen').style.opacity='0';
+      setTimeout(() => {
+        document.getElementById('loginScreen').style.display='none';
+        document.getElementById('dashboardApp').style.display='block';
+        fetchClients();
+      }, 400);
+    }
+
+    /* ── Clients ── */
+    function fetchClients() {
+      document.getElementById('tableBody').innerHTML = '<tr id="loadingRow"><td colspan="7"><div class="spinner"></div>جاري التحميل...</td></tr>';
+      document.getElementById('emptyRow').style.display = 'none';
+
+      if (window.google && google.script && google.script.run) {
+        google.script.run.withSuccessHandler(renderClients).sa_getAllClients();
+      } else {
+        setTimeout(() => renderClients([
+          { clientId:'CL-2607071800', companyName:'الشركة المتحدة',  username:'united',    password:'123', spreadsheetId:'1ABCD...', status:'مفعل',          expiryDate:'2027-01-01' },
+          { clientId:'CL-2607071900', companyName:'مؤسسة التجربة',  username:'demo',      password:'123', spreadsheetId:'2XYZ....',  status:'فترة تجريبية', expiryDate:'2026-07-15' },
+          { clientId:'CL-2607072000', companyName:'العالم للاتصالات',username:'world_tel', password:'123', spreadsheetId:'3LMN....',  status:'موقوف',         expiryDate:'2026-01-01' },
+        ]), 900);
+      }
+    }
+
+    function renderClients(clients) {
+      stateClients = clients || [];
+      const tbody = document.getElementById('tableBody');
+      document.getElementById('emptyRow').style.display = 'none';
+
+      if (!stateClients.length) {
+        tbody.innerHTML = '';
+        document.getElementById('emptyRow').style.display = 'block';
+        document.getElementById('sTotal').textContent = '0';
+        document.getElementById('sActive').textContent = '0';
+        document.getElementById('sSus').textContent = '0';
+        return;
+      }
+
+      let active=0, sus=0;
+      let html = '';
+      stateClients.forEach(c => {
+        const isActive = c.status !== 'موقوف' && !c.status.includes('منتهي');
+        if (isActive) active++; else sus++;
+
+        let bc = 'badge-trial';
+        if (c.status === 'مفعل') bc = 'badge-active';
+        else if (c.status === 'موقوف' || c.status.includes('منتهي')) bc = 'badge-stopped';
+
+        let expiry = c.expiryDate || '';
+        if (expiry.includes('T')) expiry = expiry.split('T')[0];
+
+        const sid = (c.spreadsheetId || '').substring(0,18) + (c.spreadsheetId && c.spreadsheetId.length > 18 ? '…' : '');
+
+        html += `
+          <tr>
+            <td><code style="font-size:.75rem;color:var(--muted);background:rgba(255,255,255,.04);padding:3px 8px;border-radius:6px;">${c.clientId}</code></td>
+            <td style="font-weight:700;color:#fff;">${c.companyName}</td>
+            <td style="color:#c4b5fd;" dir="ltr">${c.username}</td>
+            <td style="color:var(--muted);font-size:.78rem;" dir="ltr">${sid}</td>
+            <td><span class="badge ${bc}">${c.status}</span></td>
+            <td style="color:var(--muted);">${expiry || 'غير محدد'}</td>
+            <td>
+              <div class="action-btns">
+                <button class="act-btn act-edit" onclick="editClient('${c.clientId}')" title="تعديل">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                </button>
+                <button class="act-btn act-toggle" onclick="toggleStatus('${c.clientId}')" title="إيقاف/تفعيل">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1M4.22 4.22l.707.707m12.02 12.02l.707.707M3 12h1m16 0h1M4.927 19.073l.707-.707M18.364 5.636l.707-.707"/></svg>
+                </button>
+                <button class="act-btn act-del" onclick="deleteClient('${c.clientId}','${(c.companyName||'').replace(/'/g,"\'")}')" title="حذف">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>`;
+      });
+
+      tbody.innerHTML = html;
+      document.getElementById('sTotal').textContent = stateClients.length;
+      document.getElementById('sActive').textContent = active;
+      document.getElementById('sSus').textContent = sus;
+    }
+
+    /* ── Modal ── */
+    function openModal(clientId = null) {
+      document.getElementById('clientForm').reset();
+      document.getElementById('cId').value = '';
+
+      if (clientId) {
+        document.getElementById('modalTitle').textContent = 'تعديل بيانات العميل';
+        const c = stateClients.find(x => x.clientId === clientId);
+        if (c) {
+          document.getElementById('cId').value = c.clientId;
+          document.getElementById('cCompany').value = c.companyName;
+          document.getElementById('cUser').value = c.username;
+          document.getElementById('cPass').value = c.password;
+          document.getElementById('cStatus').value = c.status;
+          document.getElementById('cNotes').value = c.notes || '';
+          document.getElementById('cBrand').value = c.appBrandName || '';
+          document.getElementById('cLogo').value = c.appLogoUrl || '';
+          document.getElementById('cPhone1Name').value = c.phone1Name || '';
+          document.getElementById('cPhone1').value = c.phone1 || '';
+          document.getElementById('cPhone2Name').value = c.phone2Name || '';
+          document.getElementById('cPhone2').value = c.phone2 || '';
+          document.getElementById('cWhatsappGroup').value = c.whatsappGroup || '';
+          document.getElementById('cGuaranteeLink').value = c.guaranteeLink || '';
+          document.getElementById('cInstapayNumber').value = c.instapayNumber || '';
+          document.getElementById('cCashNumber').value = c.cashNumber || '';
+          let exp = c.expiryDate || '';
+          if (exp.includes('T')) exp = exp.split('T')[0];
+          document.getElementById('cExpiry').value = exp;
+        }
+      } else {
+        document.getElementById('modalTitle').textContent = 'إضافة عميل جديد';
+      }
+      document.getElementById('clientModal').classList.add('open');
+    }
+
+    function closeModal() { document.getElementById('clientModal').classList.remove('open'); }
+    function closeModalOutside(e) { if (e.target === document.getElementById('clientModal')) closeModal(); }
+    function editClient(id) { openModal(id); }
+
+    function saveClient(e) {
+      e.preventDefault();
+      const btn = document.getElementById('saveBtn');
+      btn.textContent = '⏳ جاري الحفظ...'; btn.disabled = true;
+
+      const data = {
+        clientId:    document.getElementById('cId').value,
+        companyName: document.getElementById('cCompany').value,
+        username:    document.getElementById('cUser').value,
+        password:    document.getElementById('cPass').value,
+        status:      document.getElementById('cStatus').value,
+        expiryDate:  document.getElementById('cExpiry').value,
+        notes:       document.getElementById('cNotes').value,
+        appBrandName:document.getElementById('cBrand').value,
+        appLogoUrl:  document.getElementById('cLogo').value,
+        phone1Name:  document.getElementById('cPhone1Name').value,
+        phone1:      document.getElementById('cPhone1').value,
+        phone2Name:  document.getElementById('cPhone2Name').value,
+        phone2:      document.getElementById('cPhone2').value,
+        whatsappGroup: document.getElementById('cWhatsappGroup').value,
+        guaranteeLink: document.getElementById('cGuaranteeLink').value,
+        instapayNumber: document.getElementById('cInstapayNumber').value,
+        cashNumber:  document.getElementById('cCashNumber').value
+      };
+
+      const done = (res) => {
+        btn.textContent = 'حفظ العميل'; btn.disabled = false;
+        if (res && res.success) { Swalx.fire({ icon:'success', title: data.clientId ? 'تم التحديث' : 'تمت إضافة العميل بنجاح ✅' }); closeModal(); fetchClients(); }
+        else Swalx.fire({ icon:'error', title: (res && res.message) || 'حدث خطأ' });
+      };
+
+      if (window.google && google.script && google.script.run) {
+        if (data.clientId) google.script.run.withSuccessHandler(done).sa_updateClient(data);
+        else               google.script.run.withSuccessHandler(done).sa_addClient(data);
+      } else {
+        setTimeout(() => done({ success:true }), 800);
+      }
+    }
+
+    function toggleStatus(id) {
+      Swal.fire({
+        title:'تغيير حالة العميل؟', icon:'question',
+        showCancelButton:true, confirmButtonColor:'#f5c518', cancelButtonColor:'#334155',
+        confirmButtonText:'نعم، غيّر', cancelButtonText:'إلغاء',
+        background:'#0c0916', color:'#e8e0f0'
+      }).then(r => {
+        if (!r.isConfirmed) return;
+        if (window.google && google.script && google.script.run) {
+          google.script.run.withSuccessHandler(res => {
+            if (res.success) { Swalx.fire({ icon:'success', title:'تم التغيير: ' + res.newStatus }); fetchClients(); }
+          }).sa_toggleClientStatus(id);
+        } else { Swalx.fire({ icon:'success', title:'محاكاة التغيير (Test)' }); fetchClients(); }
+      });
+    }
+
+    function deleteClient(id, name) {
+      Swal.fire({
+        title:'حذف العميل نهائياً',
+        html:`سيُحذف الحساب وينتقل شيته للسلة:<br><b style="color:#f87171">"${name}"</b>`,
+        icon:'warning', iconColor:'#f87171',
+        showCancelButton:true, confirmButtonColor:'#ef4444', cancelButtonColor:'#334155',
+        confirmButtonText:'نعم، احذف', cancelButtonText:'إلغاء',
+        background:'#0c0916', color:'#e8e0f0'
+      }).then(r => {
+        if (!r.isConfirmed) return;
+        if (window.google && google.script && google.script.run) {
+          google.script.run.withSuccessHandler(res => {
+            if (res.success) { Swalx.fire({ icon:'success', title:'تم الحذف ✅' }); fetchClients(); }
+            else Swalx.fire({ icon:'error', title: res.message || 'حدث خطأ' });
+          }).sa_deleteClient(id);
+        } else { Swalx.fire({ icon:'success', title:'تم الحذف (Test)' }); fetchClients(); }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Command Center | Offers World</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050509;
+            --gold: #f5c518;
+            --gold-dim: #d4a017;
+            --gold-glow: rgba(245, 197, 24, 0.15);
+            --card-bg: rgba(15, 12, 28, 0.8);
+            --border: rgba(245, 197, 24, 0.12);
+            --border-hover: rgba(245, 197, 24, 0.45);
+            --text: #e8e0f0;
+            --muted: #7a7a9a;
+            --purple: #7c3aed;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        html,
+        body {
+            width: 100%;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: var(--bg);
+        }
+
+        /* ────── NOISE TEXTURE ────── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.5;
+        }
+
+        /* ────── ANIMATED ORBS ────── */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(130px);
+            pointer-events: none;
+            z-index: 0;
+            animation: drift 30s ease-in-out infinite alternate;
+        }
+
+        .orb-1 {
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.35), transparent 70%);
+            top: -200px;
+            left: -200px;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(245, 197, 24, 0.2), transparent 70%);
+            bottom: -150px;
+            right: -100px;
+            animation-delay: -12s;
+            animation-duration: 25s;
+        }
+
+        .orb-3 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.15), transparent 70%);
+            top: 50%;
+            left: 55%;
+            transform: translate(-50%, -50%);
+            animation-delay: -6s;
+            animation-duration: 35s;
+        }
+
+        @keyframes drift {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(60px, -80px) scale(1.1);
+            }
+
+            66% {
+                transform: translate(-40px, 60px) scale(0.92);
+            }
+
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+        }
+
+        /* ────── GRID LINES ────── */
+        .grid-lines {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(245, 197, 24, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(245, 197, 24, 0.02) 1px, transparent 1px);
+            background-size: 80px 80px;
+        }
+
+        /* ────── LOGIN SCREEN ────── */
+        #loginScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            transition: opacity 0.6s ease;
+        }
+
+        .login-wrap {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: linear-gradient(145deg, rgba(20, 15, 40, 0.95), rgba(10, 8, 20, 0.98));
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 50px 40px;
+            text-align: center;
+            box-shadow:
+                0 0 0 1px rgba(245, 197, 24, 0.05),
+                0 30px 80px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            position: relative;
+            overflow: hidden;
+            animation: cardIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0.6;
+        }
+
+        .crown-icon {
+            font-size: 3.5rem;
+            display: block;
+            margin-bottom: 10px;
+            animation: crownPulse 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(245, 197, 24, 0.5));
+        }
+
+        @keyframes crownPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 15px rgba(245, 197, 24, 0.4));
+            }
+
+            50% {
+                transform: scale(1.08);
+                filter: drop-shadow(0 0 30px rgba(245, 197, 24, 0.7));
+            }
+        }
+
+        .login-title {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #fff 30%, var(--gold));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-sub {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 36px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(245, 197, 24, 0.1);
+            border-radius: 14px;
+            color: #fff;
+            font-size: 1rem;
+            font-family: 'Cairo';
+            outline: none;
+            transition: all 0.3s;
+            text-align: center;
+            letter-spacing: 3px;
+        }
+
+        .input-group input:focus {
+            border-color: rgba(245, 197, 24, 0.5);
+            background: rgba(245, 197, 24, 0.05);
+            box-shadow: 0 0 0 4px rgba(245, 197, 24, 0.06);
+        }
+
+        .input-group input::placeholder {
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 1.2rem;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #d4a017, #f5c518, #d4a017);
+            background-size: 200% auto;
+            color: #0a0806;
+            font-weight: 900;
+            font-size: 1rem;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-family: 'Cairo';
+            transition: all 0.4s;
+            box-shadow: 0 8px 30px rgba(245, 197, 24, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-login::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 30%, rgba(255, 255, 255, 0.15), transparent 70%);
+            transform: translateX(-100%);
+            transition: 0.5s;
+        }
+
+        .btn-login:hover {
+            background-position: right center;
+            box-shadow: 0 12px 40px rgba(245, 197, 24, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-login:hover::after {
+            transform: translateX(100%);
+        }
+
+        #loginMsg {
+            color: #f87171;
+            margin-top: 14px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        /* ────── MAIN PORTAL ────── */
+        #portalContainer {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            opacity: 0;
+            transition: opacity 0.6s;
+        }
+
+        .portal-header {
+            text-align: center;
+            margin-bottom: 70px;
+            animation: slideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .portal-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(245, 197, 24, 0.08);
+            border: 1px solid rgba(245, 197, 24, 0.2);
+            border-radius: 100px;
+            padding: 6px 20px;
+            margin-bottom: 22px;
+            font-size: 0.8rem;
+            color: var(--gold);
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .portal-title {
+            font-size: clamp(2.4rem, 6vw, 4rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 16px;
+        }
+
+        .portal-title span {
+            background: linear-gradient(135deg, #ffffff 20%, var(--gold) 60%, #d4a017);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .portal-desc {
+            color: var(--muted);
+            font-size: 1.05rem;
+            max-width: 500px;
+            margin: 0 auto 20px;
+        }
+
+        .logout-btn {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--muted);
+            padding: 8px 18px;
+            border-radius: 100px;
+            cursor: pointer;
+            font-family: 'Cairo';
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            border-color: rgba(245, 197, 24, 0.3);
+            color: var(--gold);
+        }
+
+        /* ────── MAIN CARD ────── */
+        .main-card {
+            width: 100%;
+            max-width: 600px;
+            background: linear-gradient(145deg, rgba(20, 14, 40, 0.9), rgba(12, 9, 25, 0.95));
+            border: 1px solid var(--border);
+            border-radius: 32px;
+            padding: 60px 50px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            animation: cardAppear 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+        }
+
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Top gold line */
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0.5;
+            transition: 0.5s;
+        }
+
+        /* Shimmer sweep */
+        .main-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(105deg, transparent 40%, rgba(245, 197, 24, 0.04) 50%, transparent 60%);
+            transform: skewX(-20deg);
+            transition: 0.7s;
+            pointer-events: none;
+        }
+
+        .main-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), 0 0 60px rgba(245, 197, 24, 0.08);
+        }
+
+        .main-card:hover::before {
+            opacity: 1;
+            left: 0;
+            right: 0;
+        }
+
+        .main-card:hover::after {
+            left: 150%;
+        }
+
+        .card-orb {
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.3), rgba(245, 197, 24, 0.1), transparent 70%);
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            border: 1px solid rgba(245, 197, 24, 0.1);
+            transition: all 0.5s;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(124, 58, 237, 0.1), 0 0 40px rgba(124, 58, 237, 0.05);
+        }
+
+        .main-card:hover .card-orb {
+            transform: scale(1.1) rotate(8deg);
+            border-color: rgba(245, 197, 24, 0.3);
+            box-shadow: inset 0 0 40px rgba(245, 197, 24, 0.08), 0 0 50px rgba(245, 197, 24, 0.1);
+        }
+
+        .card-orb-ring {
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 1px dashed rgba(245, 197, 24, 0.15);
+            animation: ringRotate 15s linear infinite;
+        }
+
+        @keyframes ringRotate {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .card-title {
+            font-size: 1.9rem;
+            font-weight: 800;
+            margin-bottom: 14px;
+            background: linear-gradient(135deg, #fff 40%, var(--gold));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card-desc {
+            color: var(--muted);
+            line-height: 1.7;
+            margin-bottom: 36px;
+            font-size: 1rem;
+        }
+
+        .card-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, rgba(245, 197, 24, 0.1), rgba(124, 58, 237, 0.1));
+            border: 1px solid rgba(245, 197, 24, 0.2);
+            color: var(--gold);
+            font-weight: 700;
+            font-size: 1rem;
+            padding: 14px 34px;
+            border-radius: 100px;
+            transition: all 0.4s;
+        }
+
+        .main-card:hover .card-cta {
+            background: linear-gradient(135deg, rgba(245, 197, 24, 0.2), rgba(124, 58, 237, 0.2));
+            border-color: rgba(245, 197, 24, 0.5);
+            box-shadow: 0 8px 25px rgba(245, 197, 24, 0.15);
+            gap: 16px;
+        }
+
+        .cta-arrow {
+            transition: transform 0.3s;
+            font-style: normal;
+        }
+
+        .main-card:hover .cta-arrow {
+            transform: translateX(-5px);
+        }
+
+        /* ────── STATS ROW ────── */
+        .stats-row {
+            display: flex;
+            gap: 20px;
+            margin-top: 50px;
+            max-width: 600px;
+            width: 100%;
+            animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stat-pill {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(15, 12, 28, 0.6);
+            border: 1px solid rgba(245, 197, 24, 0.07);
+            border-radius: 18px;
+            padding: 20px 16px;
+            transition: all 0.3s;
+        }
+
+        .stat-pill:hover {
+            border-color: rgba(245, 197, 24, 0.2);
+            background: rgba(245, 197, 24, 0.04);
+        }
+
+        .stat-pill .num {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--gold);
+            line-height: 1;
+        }
+
+        .stat-pill .label {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 6px;
+            font-weight: 600;
+        }
+
+        /* ────── RESPONSIVE ────── */
+        @media(max-width: 600px) {
+            .main-card {
+                padding: 40px 28px;
+                border-radius: 24px;
+            }
+
+            .portal-title {
+                font-size: 2rem;
+            }
+
+            .stats-row {
+                gap: 12px;
+            }
+
+            .stat-pill {
+                padding: 16px 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Background layers -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="grid-lines"></div>
+
+    <!-- ═══════════════════════════════ -->
+    <!--         LOGIN SCREEN           -->
+    <!-- ═══════════════════════════════ -->
+    <div id="loginScreen">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="login-wrap">
+            <div class="login-card">
+                <span class="crown-icon">👑</span>
+                <h1 class="login-title">Command Center</h1>
+                <p class="login-sub">بوابة المالك الحصرية — م. حمدي حجاج (المدير العام)</p>
+
+                <form onsubmit="handleOwnerLogin(event)">
+                    <div class="input-group">
+                        <input type="password" id="ownerPass" required placeholder="●●●●●●●●"
+                            autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn-login" id="loginBtn">تأكيد الهوية والدخول</button>
+                </form>
+                <div id="loginMsg"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════ -->
+    <!--          MAIN PORTAL           -->
+    <!-- ═══════════════════════════════ -->
+    <div id="portalContainer" style="display:flex;">
+
+        <div class="portal-header">
+            <div class="portal-badge">
+                <span>👑</span> Super Owner: Hamdy Haggag
+            </div>
+            <h1 class="portal-title">
+                <span>مركز التحكم المركزي</span>
+            </h1>
+            <p class="portal-desc">لوحة الإدارة الرئيسية لإدارة عملاء المنصة وقواعد بياناتهم المعزولة.</p>
+            <button class="logout-btn" onclick="logoutOwner()">← تسجيل الخروج</button>
+        </div>
+
+        <!-- Main Action Card -->
+        <a href="super-admin.html" class="main-card">
+            <div class="card-orb">
+                <div class="card-orb-ring"></div>
+                🌐
+            </div>
+            <div class="card-title">إدارة عملاء المنصة</div>
+            <p class="card-desc">
+                أضف عملاء جدد، تابع اشتراكاتهم، فعّل أو أوقف حساباتهم، وراقب قواعد بياناتهم المعزولة كلياً في مكان واحد.
+            </p>
+            <div class="card-cta">
+                فتح لوحة الإدارة
+                <i class="cta-arrow">←</i>
+            </div>
+        </a>
+
+        <!-- Quick Stats pills -->
+        <div class="stats-row" id="statsRow" style="display:none;">
+            <div class="stat-pill">
+                <div class="num" id="statAll">—</div>
+                <div class="label">إجمالي العملاء</div>
+            </div>
+            <div class="stat-pill">
+                <div class="num" id="statAct" style="color:#4ade80;">—</div>
+                <div class="label">حسابات مفعّلة</div>
+            </div>
+            <div class="stat-pill">
+                <div class="num" id="statSus" style="color:#f87171;">—</div>
+                <div class="label">حسابات موقوفة</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbybcWcZJZsbolFQFAt8Kl95Lptm_Xvcn9zb168j1_YFfSJaS27HfOS1z8WhRQOKorKY5Q/exec';
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('ownerSession') === 'true') {
+                showPortal();
+                loadStats();
+            }
+        });
+
+        function handleOwnerLogin(e) {
+            e.preventDefault();
+            const pass = document.getElementById('ownerPass').value.trim();
+            const btn = document.getElementById('loginBtn');
+            const msg = document.getElementById('loginMsg');
+            btn.innerHTML = '⏳ جاري التحقق...';
+            btn.style.opacity = '0.7';
+            msg.style.display = 'none';
+
+            const attempt = (pass) => {
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'sa_login', pass })
+                })
+                    .then(r => r.json())
+                    .then(res => onLoginResult(res, pass))
+                    .catch(() => {
+                        // Offline fallback
+                        if (pass === 'admin') onLoginResult({ success: true }, pass);
+                        else { btn.innerHTML = 'تأكيد الهوية والدخول'; btn.style.opacity = '1'; msg.textContent = 'تعذّر الاتصال بالسيرفر'; msg.style.display = 'block'; }
+                    });
+            };
+
+            attempt(pass);
+        }
+
+        function onLoginResult(res, pass) {
+            const btn = document.getElementById('loginBtn');
+            const msg = document.getElementById('loginMsg');
+            if (res && res.success) {
+                localStorage.removeItem('saasSheetId');
+                sessionStorage.setItem('ownerSession', 'true');
+                sessionStorage.setItem('saasPass', pass);
+                showPortal();
+                loadStats();
+            } else {
+                btn.innerHTML = 'تأكيد الهوية والدخول';
+                btn.style.opacity = '1';
+                msg.textContent = '✖ كلمة المرور غير صحيحة';
+                msg.style.display = 'block';
+            }
+        }
+
+        function loadStats() {
+            if (!window.google || !google.script) {
+                // Show demo stats
+                document.getElementById('statsRow').style.display = 'flex';
+                document.getElementById('statAll').textContent = '—';
+                return;
+            }
+            google.script.run.withSuccessHandler(clients => {
+                if (!clients) return;
+                const total = clients.length;
+                const active = clients.filter(c => c.status !== 'موقوف' && !c.status.includes('منتهي')).length;
+                const sus = clients.filter(c => c.status === 'موقوف' || c.status.includes('منتهي')).length;
+                document.getElementById('statAll').textContent = total;
+                document.getElementById('statAct').textContent = active;
+                document.getElementById('statSus').textContent = sus;
+                document.getElementById('statsRow').style.display = 'flex';
+            }).sa_getAllClients();
+        }
+
+        function showPortal() {
+            const ls = document.getElementById('loginScreen');
+            const p = document.getElementById('portalContainer');
+            ls.style.opacity = '0';
+            setTimeout(() => {
+                ls.style.display = 'none';
+                p.style.display = 'flex';
+                p.style.flexDirection = 'column';
+                p.style.alignItems = 'center';
+                p.style.justifyContent = 'center';
+                setTimeout(() => p.style.opacity = '1', 50);
+            }, 500);
+        }
+
+        function logoutOwner() {
+            sessionStorage.clear();
+            location.reload();
+        }
+    </script>
+</body>
+
+</html>
