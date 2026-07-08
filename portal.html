@@ -420,6 +420,7 @@
         <div class="header">
             <h1 id="portalTitle">صفحتك الرئيسية</h1>
             <p>أهلاً بيك! جمعنالك كل لينكاتك وأدواتك في صفحة واحدة عشان تنجز شغلك أسرع وتوصل لأي حاجة بضغطة زرار.</p>
+            <button onclick="portalLogout()" style="margin-top:22px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); color:#f87171; border-radius:14px; padding:10px 24px; font-family:'Cairo'; font-size:0.95rem; font-weight:700; cursor:pointer; transition:0.25s;" onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'">⎋ تسجيل الخروج</button>
         </div>
 
         <div class="grid">
@@ -533,6 +534,17 @@
                 portal.style.display = 'block';
                 setTimeout(() => { portal.style.opacity = '1'; }, 50);
             }, 500);
+        }
+
+        function portalLogout() {
+            localStorage.removeItem('saasSheetId');
+            localStorage.removeItem('saasClientId');
+            localStorage.removeItem('appBrandName');
+            localStorage.removeItem('appLogoUrl');
+            localStorage.removeItem('packages_cache_v2');
+            localStorage.removeItem('packages_cache_time_v2');
+            sessionStorage.clear();
+            location.reload();
         }
     </script>
 </body>

@@ -692,7 +692,10 @@
     <!-- الهيدر -->
     <header>
         <div class="header-title">تسجيل الباقات</div>
-        <div class="user-badge">أ.عبير</div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <div class="user-badge">أ.عبير</div>
+            <button onclick="trackerLogout()" title="تسجيل الخروج" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); color:#f87171; border-radius:10px; padding:6px 12px; font-family:'Cairo'; font-size:0.8rem; font-weight:700; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.3)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'">⎋ خروج</button>
+        </div>
     </header>
 
     <!-- المحتوى -->
@@ -1581,6 +1584,11 @@
             loadPackagesMaster();
             loadSummary();
         });
+
+        function trackerLogout() {
+            sessionStorage.removeItem('trackerAuth');
+            location.reload();
+        }
     </script>
 </body>
 
