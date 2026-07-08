@@ -86,6 +86,10 @@ function doGet(e) {
     return respond(getStoreSettings());
   }
 
+  if (action === 'sa_getAllClients') {
+    return respond(sa_getAllClients());
+  }
+
   return respond({ status: 'ok', system: CONFIG.SYSTEM_NAME });
 }
 
@@ -112,6 +116,22 @@ function doPost(e) {
 
     if (action === 'sa_login') {
       return respond(sa_login(data.pass));
+    }
+
+    if (action === 'sa_addClient') {
+      return respond(sa_addClient(data));
+    }
+
+    if (action === 'sa_updateClient') {
+      return respond(sa_updateClient(data));
+    }
+
+    if (action === 'sa_toggleClientStatus') {
+      return respond(sa_toggleClientStatus(data.clientId));
+    }
+
+    if (action === 'sa_deleteClient') {
+      return respond(sa_deleteClient(data.clientId));
     }
 
     if (action === 'checkPassword') {

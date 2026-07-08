@@ -403,20 +403,46 @@
 
     const Swalx = Swal.mixin({ toast:true, position:'top-end', showConfirmButton:false, timer:3000, timerProgressBar:true, background:'#0c0916', color:'#e8e0f0', iconColor:'#f5c518' });
 
+    // ==================== FETCH API HELPERS ====================
+    async function sGet(params = {}) {
+      try {
+        const url = new URL(SCRIPT_URL);
+        Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+        return await res.json();
+      } catch (err) {
+        console.error(err);
+        return { success: false, message: err.message };
+      }
+    }
+    async function sPost(payload = {}) {
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+        return await res.json();
+      } catch (err) {
+        console.error(err);
+        return { success: false, message: err.message };
+      }
+    }
+
     /* ── Auth ── */
-    function handleLogin(e) {
+    async function handleLogin(e) {
       e.preventDefault();
       const pass = document.getElementById('adminPass').value;
       const btn  = document.getElementById('loginBtn');
       btn.innerHTML = '⏳'; btn.style.opacity='.7';
 
-      if (window.google && google.script && google.script.run) {
-        google.script.run.withSuccessHandler(res => {
-          if (res.success) { showDash(); } else { Swalx.fire({ icon:'error', title:'كلمة المرور غير صحيحة' }); btn.innerHTML='تسجيل الدخول'; btn.style.opacity='1'; }
-        }).sa_login(pass);
-      } else {
-        // local bypass
-        setTimeout(() => showDash(), 700);
+      const res = await sPost({ action: 'sa_login', pass: pass });
+      if (res.success) { 
+        showDash(); 
+      } else { 
+        Swalx.fire({ icon:'error', title:'كلمة المرور غير صحيحة' }); 
+        btn.innerHTML='تسجيل الدخول'; btn.style.opacity='1'; 
       }
     }
 
@@ -430,15 +456,12 @@
     }
 
     /* ── Clients ── */
-    function fetchClients() {
+    async function fetchClients() {
       document.getElementById('tableBody').innerHTML = '<tr id="loadingRow"><td colspan="7"><div class="spinner"></div>جاري التحميل...</td></tr>';
       document.getElementById('emptyRow').style.display = 'none';
 
-      if (window.google && google.script && google.script.run) {
-        google.script.run.withSuccessHandler(renderClients).sa_getAllClients();
-      } else {
-        setTimeout(() => renderClients([]), 900);
-      }
+      const res = await sGet({ action: 'sa_getAllClients' });
+      renderClients(Array.isArray(res) ? res : []);
     }
 
     function renderClients(clients) {
@@ -539,7 +562,7 @@
     function closeModalOutside(e) { if (e.target === document.getElementById('clientModal')) closeModal(); }
     function editClient(id) { openModal(id); }
 
-    function saveClient(e) {
+    async function saveClient(e) {
       e.preventDefault();
       const btn = document.getElementById('saveBtn');
       btn.textContent = '⏳ جاري الحفظ...'; btn.disabled = true;
@@ -564,17 +587,16 @@
         cashNumber:  document.getElementById('cCashNumber').value
       };
 
-      const done = (res) => {
-        btn.textContent = 'حفظ العميل'; btn.disabled = false;
-        if (res && res.success) { Swalx.fire({ icon:'success', title: data.clientId ? 'تم التحديث' : 'تمت إضافة العميل بنجاح ✅' }); closeModal(); fetchClients(); }
-        else Swalx.fire({ icon:'error', title: (res && res.message) || 'حدث خطأ' });
-      };
+      const payload = Object.assign({ action: data.clientId ? 'sa_updateClient' : 'sa_addClient' }, data);
+      const res = await sPost(payload);
 
-      if (window.google && google.script && google.script.run) {
-        if (data.clientId) google.script.run.withSuccessHandler(done).sa_updateClient(data);
-        else               google.script.run.withSuccessHandler(done).sa_addClient(data);
+      btn.textContent = 'حفظ العميل'; btn.disabled = false;
+      if (res && res.success) { 
+        Swalx.fire({ icon:'success', title: data.clientId ? 'تم التحديث' : 'تمت إضافة العميل بنجاح ✅' }); 
+        closeModal(); 
+        fetchClients(); 
       } else {
-        setTimeout(() => done({ success:true }), 800);
+        Swalx.fire({ icon:'error', title: (res && res.message) || 'حدث خطأ' });
       }
     }
 
@@ -584,13 +606,11 @@
         showCancelButton:true, confirmButtonColor:'#f5c518', cancelButtonColor:'#334155',
         confirmButtonText:'نعم، غيّر', cancelButtonText:'إلغاء',
         background:'#0c0916', color:'#e8e0f0'
-      }).then(r => {
+      }).then(async r => {
         if (!r.isConfirmed) return;
-        if (window.google && google.script && google.script.run) {
-          google.script.run.withSuccessHandler(res => {
-            if (res.success) { Swalx.fire({ icon:'success', title:'تم التغيير: ' + res.newStatus }); fetchClients(); }
-          }).sa_toggleClientStatus(id);
-        } else { Swalx.fire({ icon:'success', title:'محاكاة التغيير (Test)' }); fetchClients(); }
+        const res = await sPost({ action: 'sa_toggleClientStatus', clientId: id });
+        if (res.success) { Swalx.fire({ icon:'success', title:'تم التغيير: ' + res.newStatus }); fetchClients(); }
+        else { Swalx.fire({ icon:'error', title:'حدث خطأ' }); }
       });
     }
 
@@ -602,14 +622,11 @@
         showCancelButton:true, confirmButtonColor:'#ef4444', cancelButtonColor:'#334155',
         confirmButtonText:'نعم، احذف', cancelButtonText:'إلغاء',
         background:'#0c0916', color:'#e8e0f0'
-      }).then(r => {
+      }).then(async r => {
         if (!r.isConfirmed) return;
-        if (window.google && google.script && google.script.run) {
-          google.script.run.withSuccessHandler(res => {
-            if (res.success) { Swalx.fire({ icon:'success', title:'تم الحذف ✅' }); fetchClients(); }
-            else Swalx.fire({ icon:'error', title: res.message || 'حدث خطأ' });
-          }).sa_deleteClient(id);
-        } else { Swalx.fire({ icon:'success', title:'تم الحذف (Test)' }); fetchClients(); }
+        const res = await sPost({ action: 'sa_deleteClient', clientId: id });
+        if (res.success) { Swalx.fire({ icon:'success', title:'تم الحذف ✅' }); fetchClients(); }
+        else Swalx.fire({ icon:'error', title: res.message || 'حدث خطأ' });
       });
     }
   </script>
