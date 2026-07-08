@@ -91,6 +91,14 @@ function sa_addClient(clientData) {
     var newId = 'CL-' + Utilities.formatDate(new Date(), 'Africa/Cairo', 'yyMMddHHmmss');
     var autoSheetId = clientSS.getId();
 
+    // Upload Logo if provided as base64
+    if (clientData.appLogoBase64) {
+      var savedLogoUrl = saveBase64File(clientData.appLogoBase64, newId + "_Logo");
+      if (savedLogoUrl) {
+        clientData.appLogoUrl = savedLogoUrl;
+      }
+    }
+
     sheet.appendRow([
       newId,
       clientData.username || '',
@@ -161,6 +169,14 @@ function sa_updateClient(clientData) {
     
     var rowIndex = findResult.getRow();
     
+    // Upload Logo if provided as base64
+    if (clientData.appLogoBase64) {
+      var savedLogoUrl = saveBase64File(clientData.appLogoBase64, clientData.clientId + "_Logo");
+      if (savedLogoUrl) {
+        clientData.appLogoUrl = savedLogoUrl;
+      }
+    }
+
     // التحديث (تجاهل العمود A لأنه ID، وعمود H لأنه تاريخ الانشاء)
     if (clientData.username) sheet.getRange(rowIndex, 2).setValue(clientData.username);
     if (clientData.password) sheet.getRange(rowIndex, 3).setValue(clientData.password);

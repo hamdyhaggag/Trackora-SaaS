@@ -243,7 +243,7 @@
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           تحديث
         </button>
-        <button class="btn-add" onclick="openModal()">
+        <button class="btn-add" onclick="addClient()">
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
           عميل جديد
         </button>
@@ -338,8 +338,10 @@
               <input type="text" id="cBrand" class="form-control" placeholder="مثال: متجر الهواتف">
             </div>
             <div class="form-group full">
-              <label>رابط اللوجو الخاص بالعميل (Logo URL)</label>
-              <input type="text" id="cLogo" class="form-control" placeholder="https://example.com/logo.png" dir="ltr">
+              <label>اللوجو الخاص بالعميل (Logo)</label>
+              <input type="file" id="cLogoFile" accept="image/*" class="form-control" onchange="convertLogoToBase64(this)">
+              <input type="hidden" id="cLogoBase64">
+              <small id="cLogoPreview" style="display:block;margin-top:5px;color:#a560f7;"></small>
             </div>
 
             <div class="form-group full" style="margin-top:10px;">
@@ -398,10 +400,21 @@
   </div>
 
   <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTGc4wcB8IoFdkl7fX1wSISYWMG_HhLZwtCBatGjLUOZpECabKk8vBMOLgu3_PnRaIrg/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvZ5Dr9_aFG3_gCh9DUkQyqJMNr5CaZITcmsqGMFucVSuHgJ9gwqc7XEfQaL6kr3XJvA/exec';
     let stateClients = [];
 
     const Swalx = Swal.mixin({ toast:true, position:'top-end', showConfirmButton:false, timer:3000, timerProgressBar:true, background:'#0c0916', color:'#e8e0f0', iconColor:'#f5c518' });
+
+    function convertLogoToBase64(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('cLogoBase64').value = e.target.result;
+        document.getElementById('cLogoPreview').textContent = '✅ تم اختيار الصورة (' + file.name + ')';
+      };
+      reader.readAsDataURL(file);
+    }
 
     // ==================== FETCH API HELPERS ====================
     async function sGet(params = {}) {
@@ -539,7 +552,11 @@
           document.getElementById('cStatus').value = c.status;
           document.getElementById('cNotes').value = c.notes || '';
           document.getElementById('cBrand').value = c.appBrandName || '';
-          document.getElementById('cLogo').value = c.appLogoUrl || '';
+          
+          document.getElementById('cLogoFile').value = '';
+          document.getElementById('cLogoBase64').value = '';
+          document.getElementById('cLogoPreview').innerHTML = c.appLogoUrl ? `<a href="${c.appLogoUrl}" target="_blank" style="color:#a560f7;">يوجد لوجو حالي (اضغط للعرض)</a>` : 'لم يتم رفع صورة';
+          
           document.getElementById('cPhone1Name').value = c.phone1Name || '';
           document.getElementById('cPhone1').value = c.phone1 || '';
           document.getElementById('cPhone2Name').value = c.phone2Name || '';
@@ -561,6 +578,13 @@
     function closeModal() { document.getElementById('clientModal').classList.remove('open'); }
     function closeModalOutside(e) { if (e.target === document.getElementById('clientModal')) closeModal(); }
     function editClient(id) { openModal(id); }
+    
+    function addClient() {
+      document.getElementById('cLogoFile').value = '';
+      document.getElementById('cLogoBase64').value = '';
+      document.getElementById('cLogoPreview').innerHTML = '';
+      openModal();
+    }
 
     async function saveClient(e) {
       e.preventDefault();
@@ -576,7 +600,7 @@
         expiryDate:  document.getElementById('cExpiry').value,
         notes:       document.getElementById('cNotes').value,
         appBrandName:document.getElementById('cBrand').value,
-        appLogoUrl:  document.getElementById('cLogo').value,
+        appLogoBase64:document.getElementById('cLogoBase64').value,
         phone1Name:  document.getElementById('cPhone1Name').value,
         phone1:      document.getElementById('cPhone1').value,
         phone2Name:  document.getElementById('cPhone2Name').value,
