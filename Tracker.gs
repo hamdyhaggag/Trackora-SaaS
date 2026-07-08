@@ -233,7 +233,14 @@ function normalizeDate(val) {
   if (val instanceof Date) {
     return Utilities.formatDate(val, 'Africa/Cairo', 'dd/MM/yyyy');
   }
-  return String(val).trim().split(' ')[0]; // خذ التاريخ فقط بدون الوقت
+  var d = String(val).trim().split(' ')[0]; // خذ التاريخ فقط بدون الوقت
+  var parts = d.split('/');
+  if (parts.length === 3) {
+    if (parts[0].length === 1) parts[0] = '0' + parts[0];
+    if (parts[1].length === 1) parts[1] = '0' + parts[1];
+    return parts[0] + '/' + parts[1] + '/' + parts[2];
+  }
+  return d;
 }
 
 // ============================================================

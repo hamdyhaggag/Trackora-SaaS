@@ -457,7 +457,9 @@
             border: 1px solid rgba(139, 60, 247, 0.35);
         }
 
-        .btn-edit-log:hover { background: rgba(139, 60, 247, 0.35); }
+        .btn-edit-log:hover {
+            background: rgba(139, 60, 247, 0.35);
+        }
 
         .btn-delete-log {
             background: rgba(239, 68, 68, 0.12);
@@ -465,13 +467,15 @@
             border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
-        .btn-delete-log:hover { background: rgba(239, 68, 68, 0.28); }
+        .btn-delete-log:hover {
+            background: rgba(239, 68, 68, 0.28);
+        }
 
         /* Overlay خلفية المودال */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.65);
+            background: rgba(0, 0, 0, 0.65);
             backdrop-filter: blur(4px);
             z-index: 500;
             display: flex;
@@ -498,7 +502,7 @@
             max-height: 90vh;
             overflow-y: auto;
             transform: translateY(100%);
-            transition: transform 0.38s cubic-bezier(.4,0,.2,1);
+            transition: transform 0.38s cubic-bezier(.4, 0, .2, 1);
         }
 
         .modal-overlay.open .modal-sheet {
@@ -533,22 +537,36 @@
         .confirm-sheet {
             background: var(--card);
             border-radius: 24px 24px 0 0;
-            border-top: 1px solid rgba(239,68,68,0.4);
+            border-top: 1px solid rgba(239, 68, 68, 0.4);
             padding: 30px 24px 40px;
             width: 100%;
             max-width: 600px;
             text-align: center;
             transform: translateY(100%);
-            transition: transform 0.38s cubic-bezier(.4,0,.2,1);
+            transition: transform 0.38s cubic-bezier(.4, 0, .2, 1);
         }
 
         .modal-overlay.open .confirm-sheet {
             transform: translateY(0);
         }
 
-        .confirm-icon { font-size: 3rem; margin-bottom: 12px; }
-        .confirm-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 6px; color: var(--red); }
-        .confirm-sub { font-size: 0.9rem; color: var(--muted); margin-bottom: 24px; }
+        .confirm-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        .confirm-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+            color: var(--red);
+        }
+
+        .confirm-sub {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
 
         .confirm-btns {
             display: grid;
@@ -578,11 +596,14 @@
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(239,68,68,0.35);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);
         }
 
         /* مؤشر التحميل داخل زر */
-        .btn-saving { opacity: 0.6; pointer-events: none; }
+        .btn-saving {
+            opacity: 0.6;
+            pointer-events: none;
+        }
 
         /* select مخصص */
         .input-select {
@@ -601,8 +622,14 @@
             background-position: left 14px center;
         }
 
-        .input-select:focus { outline: none; border-color: var(--accent); }
-        .input-select option { background: var(--card2); }
+        .input-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .input-select option {
+            background: var(--card2);
+        }
 
         /* فلتر المؤشرات */
         .filter-bar {
@@ -638,7 +665,10 @@
             -webkit-appearance: none;
         }
 
-        .filter-select:focus { outline: none; border-color: var(--accent); }
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
 
         .btn-filter-all {
             padding: 8px 14px;
@@ -671,17 +701,20 @@
             transition: var(--transition);
         }
 
-        .filter-refresh:hover { border-color: var(--accent); color: var(--accent2);        }
+        .filter-refresh:hover {
+            border-color: var(--accent);
+            color: var(--accent2);
+        }
     </style>
 </head>
 
 <body>
-<script>
-    (function(){
-        const bName = localStorage.getItem('appBrandName');
-        if(bName) document.title = 'تتبع المبيعات — ' + bName;
-    })();
-</script>
+    <script>
+        (function () {
+            const bName = localStorage.getItem('appBrandName');
+            if (bName) document.title = 'تتبع المبيعات — ' + bName;
+        })();
+    </script>
 
     <!-- التوست -->
     <div id="toast">تم الحفظ بنجاح!</div>
@@ -694,7 +727,10 @@
         <div class="header-title">تسجيل الباقات</div>
         <div style="display:flex; align-items:center; gap:10px;">
             <div class="user-badge" id="trackerUserBadge"></div>
-            <button onclick="trackerLogout()" title="تسجيل الخروج" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); color:#f87171; border-radius:10px; padding:6px 12px; font-family:'Cairo'; font-size:0.8rem; font-weight:700; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.3)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'">⎋ خروج</button>
+            <button onclick="trackerLogout()" title="تسجيل الخروج"
+                style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); color:#f87171; border-radius:10px; padding:6px 12px; font-family:'Cairo'; font-size:0.8rem; font-weight:700; cursor:pointer; transition:0.2s;"
+                onmouseover="this.style.background='rgba(239,68,68,0.3)'"
+                onmouseout="this.style.background='rgba(239,68,68,0.15)'">⎋ خروج</button>
         </div>
     </header>
 
@@ -704,7 +740,7 @@
         <!-- Tab 1: نموذج التسجيل -->
         <div id="tab-add" class="tab-content active">
 
-            <label class="section-label">1. اختاري الشركة</label>
+            <label class="section-label">1. اختارالشركة</label>
             <div class="options-grid" id="companiesGrid">
                 <!-- يُملأ برمجياً بناءً على Master Data -->
                 <button class="btn-option" onclick="selectCompany('اتصالات')">اتصالات</button>
@@ -714,7 +750,7 @@
             </div>
 
             <div id="packagesSection" style="display: none;">
-                <label class="section-label">2. اختاري الباقة</label>
+                <label class="section-label">2. اختارالباقة</label>
                 <div class="packages-list" id="packagesList">
                     <!-- سيتم عرض الباقات التابعة للشركة المختارة هنا -->
                 </div>
@@ -852,15 +888,18 @@
                 </select>
 
                 <label class="modal-field-label">السعر (ج) — يُحسب تلقائياً أو عدّله يدوياً</label>
-                <input type="number" id="editPrice" class="input-text" placeholder="السعر بالجنيه" min="0" step="0.01" style="margin-bottom:0;">
+                <input type="number" id="editPrice" class="input-text" placeholder="السعر بالجنيه" min="0" step="0.01"
+                    style="margin-bottom:0;">
 
                 <label class="modal-field-label">اسم / رقم العميل</label>
-                <input type="text" id="editClientRef" class="input-text" placeholder="اسم أو رقم العميل" style="margin-bottom:0;">
+                <input type="text" id="editClientRef" class="input-text" placeholder="اسم أو رقم العميل"
+                    style="margin-bottom:0;">
 
                 <label class="modal-field-label">ملاحظات</label>
                 <input type="text" id="editNotes" class="input-text" placeholder="ملاحظات..." style="margin-bottom:0;">
 
-                <button id="editSaveBtn" class="btn-primary" style="margin-top:20px;" onclick="saveEdit()">💾 حفظ التعديلات</button>
+                <button id="editSaveBtn" class="btn-primary" style="margin-top:20px;" onclick="saveEdit()">💾 حفظ
+                    التعديلات</button>
             </div>
         </div>
 
@@ -874,7 +913,8 @@
                 <input type="hidden" id="deleteRowId">
                 <div class="confirm-btns">
                     <button class="btn-cancel-modal" onclick="closeDeleteModal()">إلغاء</button>
-                    <button id="deleteConfirmBtn" class="btn-confirm-delete" onclick="confirmDelete()">نعم، احذف</button>
+                    <button id="deleteConfirmBtn" class="btn-confirm-delete" onclick="confirmDelete()">نعم،
+                        احذف</button>
                 </div>
             </div>
         </div>
@@ -903,7 +943,7 @@
 
     <script>
         // CONFIG MUST MATCH Client.gs doGet URL
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwRWHFc-Br95ckxrj4KDqdcH_Tx0OBZ5gnB1W0NFiGioRbpKqnoDUhZ9HlWrYGE5zWVCQ/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxYL8vcfkBDzvgynaBNTLRi9FtUWG9pBhUa8o90bElyNSY3onJ2zhwSm7DlUgiU0a-CMg/exec';
 
         let ALL_PACKAGES = {};
         let SELECTED_DATA = {
@@ -931,11 +971,11 @@
 
         function buildFilterSelects() {
             const monthSel = document.getElementById('filterMonth');
-            const yearSel  = document.getElementById('filterYear');
+            const yearSel = document.getElementById('filterYear');
 
             const monthNames = [
-                'يناير','فبراير','مارس','أبريل','مايو','يونيو',
-                'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'
+                'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+                'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
             ];
             monthSel.innerHTML = monthNames.map((m, i) =>
                 `<option value="${i + 1}">${m}</option>`
@@ -949,14 +989,14 @@
 
             // اختر الشهر والسنة الحاليين افتراضياً
             monthSel.value = new Date().getMonth() + 1;
-            yearSel.value  = currentYear;
+            yearSel.value = currentYear;
         }
 
         function setFilterAll() {
             filterAllData = true;
             document.getElementById('btnFilterAll').classList.add('active');
             document.getElementById('filterMonth').disabled = true;
-            document.getElementById('filterYear').disabled  = true;
+            document.getElementById('filterYear').disabled = true;
             loadSummary();
         }
 
@@ -964,7 +1004,7 @@
             filterAllData = false;
             document.getElementById('btnFilterAll').classList.remove('active');
             document.getElementById('filterMonth').disabled = false;
-            document.getElementById('filterYear').disabled  = false;
+            document.getElementById('filterYear').disabled = false;
             loadSummary();
         }
 
@@ -983,7 +1023,7 @@
         // --- تحميل الـ Master Data ---
         async function loadPackagesMaster() {
             const sheetId = localStorage.getItem('saasSheetId') || '';
-            
+
             // Demo fallback: show mock packages when no real spreadsheet is connected
             if (!sheetId) {
                 ALL_PACKAGES = {
@@ -1085,7 +1125,7 @@
             const payload = {
                 action: 'addTrackerLog',
                 spreadsheetId: localStorage.getItem('saasSheetId') || '',
-                date: new Date().toLocaleDateString('en-GB'),
+                // date: new Date().toLocaleDateString('en-GB'), // removed to let backend handle date reliably
                 company: SELECTED_DATA.company,
                 packageId: SELECTED_DATA.packageId,
                 packageName: SELECTED_DATA.packageName,
@@ -1173,7 +1213,7 @@
         // --- تحميل الملخص ---
         async function loadSummary() {
             const sheetId = localStorage.getItem('saasSheetId') || '';
-            
+
             // Demo fallback: show mock summary when no real spreadsheet is connected
             if (!sheetId) {
                 const mockSummary = {
@@ -1214,17 +1254,17 @@
                 }
                 if (filterAllData) url += '&all=1';
 
-                const res  = await fetch(url);
+                const res = await fetch(url);
                 const json = await res.json();
 
                 if (json.success) {
                     document.getElementById('todayCount').innerText = json.today.count;
-                    document.getElementById('todayRev').innerText   = json.today.revenue;
+                    document.getElementById('todayRev').innerText = json.today.revenue;
                     renderTodayCompanies(json.today.byCompany);
 
                     const period = json.filtered || json.monthly;
                     document.getElementById('monthCount').innerText = period.count;
-                    document.getElementById('monthRev').innerText   = period.revenue;
+                    document.getElementById('monthRev').innerText = period.revenue;
 
                     document.getElementById('topCompany').innerText =
                         period.topCompany && period.topCompany.name
@@ -1243,8 +1283,8 @@
 
         function updatePeriodLabel() {
             const monthNames = [
-                'يناير','فبراير','مارس','أبريل','مايو','يونيو',
-                'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'
+                'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+                'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
             ];
             const h3 = document.querySelector('#tab-month h3');
             if (!h3) return;
@@ -1349,7 +1389,7 @@
                     </div>
                     <div class="log-actions">
                         <button class="btn-log-action btn-edit-log" onclick="openEditModal('${log.rowId}')" title="تعديل">✏️ تعديل</button>
-                        <button class="btn-log-action btn-delete-log" onclick="openDeleteModal('${log.rowId}', '${(log.company||'').replace(/'/g,"'")} - ${(log.packageName||'').replace(/'/g,"'")}')" title="حذف">🗑️ حذف</button>
+                        <button class="btn-log-action btn-delete-log" onclick="openDeleteModal('${log.rowId}', '${(log.company || '').replace(/'/g, "'")} - ${(log.packageName || '').replace(/'/g, "'")}')" title="حذف">🗑️ حذف</button>
                     </div>
                 `;
                 container.appendChild(div);
@@ -1404,8 +1444,7 @@
             const pkgs = ALL_PACKAGES[co] || [];
             const pkgSel = document.getElementById('editPackage');
             pkgSel.innerHTML = pkgs.map(p =>
-                `<option value="${p.id}" data-price="${p.price}" ${
-                    (selectId && (String(p.id) === String(selectId) || p.name === selectId)) ? 'selected' : ''
+                `<option value="${p.id}" data-price="${p.price}" ${(selectId && (String(p.id) === String(selectId) || p.name === selectId)) ? 'selected' : ''
                 }>${p.name} — ${p.price} ج</option>`
             ).join('');
             // تزامن السعر عند تغيير الشركة
@@ -1573,16 +1612,16 @@
             const bName = localStorage.getItem('appBrandName');
             const saasUser = localStorage.getItem('saasUsername') || 'المستخدم';
 
-            if(bName) {
+            if (bName) {
                 const headerTitle = document.querySelector('.header-title');
-                if(headerTitle) headerTitle.textContent = 'تسجيل المبيعات — ' + bName;
-                
+                if (headerTitle) headerTitle.textContent = 'تسجيل المبيعات — ' + bName;
+
                 const loginSubtitle = document.querySelector('.login-box p');
-                if(loginSubtitle) loginSubtitle.textContent = bName + ' — تتبع المبيعات';
+                if (loginSubtitle) loginSubtitle.textContent = bName + ' — تتبع المبيعات';
             }
 
             const userBadge = document.getElementById('trackerUserBadge');
-            if(userBadge) userBadge.textContent = 'أ.' + saasUser;
+            if (userBadge) userBadge.textContent = 'أ.' + saasUser;
 
             document.title = 'تسجيل الباقات — أ.' + saasUser;
 
