@@ -1,10 +1,10 @@
-﻿// ============================================================
-// Tracker.gs — نظام متابعة الباقات اليدوية (صفحة عبير)
+// ============================================================
+// Tracker.gs — نظام متابعة الباقات اليدوية
 // ✅ UPDATED: getTrackerSummary تدعم all=1 + month + year
 // ============================================================
 
 const TRACKER_SHEET = '📊 PackageLogs';
-const TRACKER_PASSWORD = PropertiesService.getScriptProperties().getProperty('TRACKER_PASSWORD') || 'abeer123';
+const TRACKER_PASSWORD = PropertiesService.getScriptProperties().getProperty('TRACKER_PASSWORD') || 'tracker123';
 
 // ============================================================
 // doGet — إضافة page=tracker

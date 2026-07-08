@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>تسجيل الباقات — أ.عبير</title>
+    <title>تسجيل الباقات</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -693,7 +693,7 @@
     <header>
         <div class="header-title">تسجيل الباقات</div>
         <div style="display:flex; align-items:center; gap:10px;">
-            <div class="user-badge">أ.عبير</div>
+            <div class="user-badge" id="trackerUserBadge"></div>
             <button onclick="trackerLogout()" title="تسجيل الخروج" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); color:#f87171; border-radius:10px; padding:6px 12px; font-family:'Cairo'; font-size:0.8rem; font-weight:700; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.3)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'">⎋ خروج</button>
         </div>
     </header>
@@ -903,7 +903,7 @@
 
     <script>
         // CONFIG MUST MATCH Client.gs doGet URL
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyvZ5Dr9_aFG3_gCh9DUkQyqJMNr5CaZITcmsqGMFucVSuHgJ9gwqc7XEfQaL6kr3XJvA/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwRWHFc-Br95ckxrj4KDqdcH_Tx0OBZ5gnB1W0NFiGioRbpKqnoDUhZ9HlWrYGE5zWVCQ/exec';
 
         let ALL_PACKAGES = {};
         let SELECTED_DATA = {
@@ -1571,6 +1571,8 @@
         }
         window.addEventListener('DOMContentLoaded', () => {
             const bName = localStorage.getItem('appBrandName');
+            const saasUser = localStorage.getItem('saasUsername') || 'المستخدم';
+
             if(bName) {
                 const headerTitle = document.querySelector('.header-title');
                 if(headerTitle) headerTitle.textContent = 'تسجيل المبيعات — ' + bName;
@@ -1578,6 +1580,11 @@
                 const loginSubtitle = document.querySelector('.login-box p');
                 if(loginSubtitle) loginSubtitle.textContent = bName + ' — تتبع المبيعات';
             }
+
+            const userBadge = document.getElementById('trackerUserBadge');
+            if(userBadge) userBadge.textContent = 'أ.' + saasUser;
+
+            document.title = 'تسجيل الباقات — أ.' + saasUser;
 
             buildFilterSelects();      // بناء قوائم الفلتر
             setFilterAll();            // وضع «كل البيانات» افتراضي

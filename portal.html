@@ -466,7 +466,7 @@
     <!-- =============================== -->
     <script>
         // REPLACE WITH THE DEPLOYED WEB APP URL OF THE NEW SAAS INSTANCE
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvZ5Dr9_aFG3_gCh9DUkQyqJMNr5CaZITcmsqGMFucVSuHgJ9gwqc7XEfQaL6kr3XJvA/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRWHFc-Br95ckxrj4KDqdcH_Tx0OBZ5gnB1W0NFiGioRbpKqnoDUhZ9HlWrYGE5zWVCQ/exec';
 
         window.addEventListener('DOMContentLoaded', () => {
             const storedSheetId = localStorage.getItem('saasSheetId');
@@ -508,6 +508,7 @@
                     localStorage.setItem('saasClientId', data.clientId || '');
                     localStorage.setItem('appBrandName', data.appBrandName || 'تراكورا');
                     localStorage.setItem('appLogoUrl', data.appLogoUrl || '');
+                    localStorage.setItem('saasUsername', user);
                     applyBranding();
                     showPortal();
                 } else {
@@ -541,6 +542,7 @@
             localStorage.removeItem('saasClientId');
             localStorage.removeItem('appBrandName');
             localStorage.removeItem('appLogoUrl');
+            localStorage.removeItem('saasUsername');
             localStorage.removeItem('packages_cache_v2');
             localStorage.removeItem('packages_cache_time_v2');
             sessionStorage.clear();
