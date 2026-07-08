@@ -437,11 +437,7 @@
       if (window.google && google.script && google.script.run) {
         google.script.run.withSuccessHandler(renderClients).sa_getAllClients();
       } else {
-        setTimeout(() => renderClients([
-          { clientId:'CL-2607071800', companyName:'الشركة المتحدة',  username:'united',    password:'123', spreadsheetId:'1ABCD...', status:'مفعل',          expiryDate:'2027-01-01' },
-          { clientId:'CL-2607071900', companyName:'مؤسسة التجربة',  username:'demo',      password:'123', spreadsheetId:'2XYZ....',  status:'فترة تجريبية', expiryDate:'2026-07-15' },
-          { clientId:'CL-2607072000', companyName:'العالم للاتصالات',username:'world_tel', password:'123', spreadsheetId:'3LMN....',  status:'موقوف',         expiryDate:'2026-01-01' },
-        ]), 900);
+        setTimeout(() => renderClients([]), 900);
       }
     }
 
