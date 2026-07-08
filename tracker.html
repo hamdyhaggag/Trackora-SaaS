@@ -979,8 +979,35 @@
 
         // --- تحميل الـ Master Data ---
         async function loadPackagesMaster() {
+            const sheetId = localStorage.getItem('saasSheetId') || '';
+            
+            // Demo fallback: show mock packages when no real spreadsheet is connected
+            if (!sheetId) {
+                ALL_PACKAGES = {
+                    'فودافون': [
+                        { id: 'VF-1', name: '5,000 ميجا + 500 دقيقة', price: 150 },
+                        { id: 'VF-2', name: '10,000 ميجا + 1000 دقيقة', price: 210 },
+                        { id: 'VF-3', name: '20,000 ميجا أون لاين', price: 280 },
+                    ],
+                    'اتصالات': [
+                        { id: 'TE-1', name: '4,000 ميجا + 300 دقيقة', price: 130 },
+                        { id: 'TE-2', name: '8,000 ميجا + 600 دقيقة', price: 190 },
+                        { id: 'TE-3', name: '15,000 ميجا + مكالمة مجانية', price: 250 },
+                    ],
+                    'أورانج': [
+                        { id: 'OR-1', name: '3,000 ميجا + 200 دقيقة', price: 110 },
+                        { id: 'OR-2', name: '7,000 ميجا + 700 دقيقة', price: 175 },
+                    ],
+                    'WE': [
+                        { id: 'WE-1', name: '6,000 ميجا + 400 دقيقة', price: 140 },
+                        { id: 'WE-2', name: '12,000 ميجا غير محدودة', price: 220 },
+                    ]
+                };
+                renderCompanies();
+                return;
+            }
+
             try {
-                const sheetId = localStorage.getItem('saasSheetId') || '';
                 const res = await fetch(`${API_URL}?action=trackerPackages&spreadsheetId=${sheetId}`);
                 const json = await res.json();
                 if (json.success) {
@@ -1142,29 +1169,57 @@
 
         // --- تحميل الملخص ---
         async function loadSummary() {
+            const sheetId = localStorage.getItem('saasSheetId') || '';
+            
+            // Demo fallback: show mock summary when no real spreadsheet is connected
+            if (!sheetId) {
+                const mockSummary = {
+                    success: true,
+                    today: {
+                        count: 4,
+                        revenue: 750,
+                        byCompany: { 'فودافون': 2, 'اتصالات': 1, 'أورانج': 1 }
+                    },
+                    filtered: {
+                        count: 47,
+                        revenue: 9350,
+                        topCompany: { name: 'فودافون', count: 20 },
+                        bottomCompany: { name: 'WE', count: 4 },
+                        bySource: { 'واتساب': 22, 'فيسبوك': 12, 'اتصال': 8, 'تيليجرام': 5 },
+                        byCompany: { 'فودافون': 20, 'اتصالات': 14, 'أورانج': 9, 'WE': 4 }
+                    }
+                };
+                document.getElementById('todayCount').innerText = mockSummary.today.count;
+                document.getElementById('todayRev').innerText = mockSummary.today.revenue;
+                renderTodayCompanies(mockSummary.today.byCompany);
+                const p = mockSummary.filtered;
+                document.getElementById('monthCount').innerText = p.count;
+                document.getElementById('monthRev').innerText = p.revenue;
+                document.getElementById('topCompany').innerText = `${p.topCompany.name} (${p.topCompany.count} عملية)`;
+                document.getElementById('bottomCompany').innerText = `${p.bottomCompany.name} (${p.bottomCompany.count} عملية)`;
+                initCharts(p.bySource, p.byCompany);
+                updatePeriodLabel();
+                return;
+            }
+
             try {
-                // بناء رابط الـ API مع الفلتر
-                const sheetId = localStorage.getItem('saasSheetId') || '';
                 let url = `${API_URL}?action=trackerSummary&spreadsheetId=${sheetId}`;
                 if (!filterAllData) {
                     const m = document.getElementById('filterMonth').value;
                     const y = document.getElementById('filterYear').value;
                     url += `&month=${m}&year=${y}`;
                 }
-                // all=1 يخبر الـ Backend بإرجاع كل البيانات بدون فلتر شهر
                 if (filterAllData) url += '&all=1';
 
                 const res  = await fetch(url);
                 const json = await res.json();
 
                 if (json.success) {
-                    // بيانات اليوم (دائماً تُعرض)
                     document.getElementById('todayCount').innerText = json.today.count;
                     document.getElementById('todayRev').innerText   = json.today.revenue;
                     renderTodayCompanies(json.today.byCompany);
 
-                    // بيانات الفترة المختارة
-                    const period = json.filtered || json.monthly; // يدعم القديم والجديد
+                    const period = json.filtered || json.monthly;
                     document.getElementById('monthCount').innerText = period.count;
                     document.getElementById('monthRev').innerText   = period.revenue;
 
@@ -1176,8 +1231,6 @@
                             ? `${period.bottomCompany.name} (${period.bottomCompany.count} عملية)` : '-';
 
                     initCharts(period.bySource, period.byCompany);
-
-                    // تحديث عنوان الشاشة
                     updatePeriodLabel();
                 }
             } catch (err) {
@@ -1227,8 +1280,26 @@
             loader.style.display = 'block';
             container.innerHTML = '';
 
+            const sheetId = localStorage.getItem('saasSheetId') || '';
+
+            // Demo fallback: show mock logs when no real spreadsheet is connected
+            if (!sheetId) {
+                const today = new Date().toLocaleDateString('en-GB');
+                ALL_LOGS = [
+                    { rowId: 'D1', date: today, createdAt: today + ' 10:05:00', company: 'فودافون', packageName: '10,000 ميجا + 1000 دقيقة', price: 210, source: 'واتساب', status: 'تم', clientRef: '01012345678', notes: '' },
+                    { rowId: 'D2', date: today, createdAt: today + ' 10:22:00', company: 'اتصالات', packageName: '8,000 ميجا + 600 دقيقة', price: 190, source: 'فيسبوك', status: 'تم', clientRef: 'أحمد محمود', notes: '' },
+                    { rowId: 'D3', date: today, createdAt: today + ' 11:01:00', company: 'فودافون', packageName: '5,000 ميجا + 500 دقيقة', price: 150, source: 'واتساب', status: 'تم', clientRef: '01155667788', notes: 'عميل متكرر' },
+                    { rowId: 'D4', date: today, createdAt: today + ' 11:45:00', company: 'أورانج', packageName: '7,000 ميجا + 700 دقيقة', price: 175, source: 'اتصال', status: 'تم', clientRef: '', notes: '' },
+                    { rowId: 'D5', date: '07/07/2026', createdAt: '07/07/2026 14:10:00', company: 'فودافون', packageName: '20,000 ميجا أون لاين', price: 280, source: 'تيليجرام', status: 'تم', clientRef: '01234567890', notes: '' },
+                    { rowId: 'D6', date: '07/07/2026', createdAt: '07/07/2026 15:30:00', company: 'اتصالات', packageName: '15,000 ميجا + مكالمة مجانية', price: 250, source: 'فيسبوك', status: 'تم', clientRef: 'سارة علي', notes: '' },
+                    { rowId: 'D7', date: '06/07/2026', createdAt: '06/07/2026 10:00:00', company: 'WE', packageName: '12,000 ميجا غير محدودة', price: 220, source: 'واتساب', status: 'تم', clientRef: '', notes: '' },
+                ];
+                loader.style.display = 'none';
+                renderLogs(ALL_LOGS);
+                return;
+            }
+
             try {
-                const sheetId = localStorage.getItem('saasSheetId') || '';
                 const res = await fetch(`${API_URL}?action=trackerLogs&spreadsheetId=${sheetId}`);
                 const json = await res.json();
 

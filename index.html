@@ -815,6 +815,23 @@
         if (!res.ok) throw new Error('فشل الاتصال');
 
         this.allPackages = await res.json();
+        
+        // Demo fallback: if no packages returned for demo store, inject sample data
+        if (!this.allPackages || this.allPackages.length === 0) {
+          this.allPackages = [
+            { company: 'فودافون', name: '5,000 ميجا + 500 دقيقة', price: 150, type: 'dataOnly' },
+            { company: 'فودافون', name: '10,000 ميجا + 1000 دقيقة', price: 210, type: 'dataAndMins' },
+            { company: 'فودافون', name: '20,000 ميجا أون لاين', price: 280, type: 'dataOnly' },
+            { company: 'اتصالات', name: '4,000 ميجا + 300 دقيقة', price: 130, type: 'dataAndMins' },
+            { company: 'اتصالات', name: '8,000 ميجا + 600 دقيقة', price: 190, type: 'dataAndMins' },
+            { company: 'اتصالات', name: '15,000 ميجا + مكالمة مجانية', price: 250, type: 'dataAndMins' },
+            { company: 'أورانج', name: '3,000 ميجا + 200 دقيقة', price: 110, type: 'dataAndMins' },
+            { company: 'أورانج', name: '7,000 ميجا + 700 دقيقة', price: 175, type: 'dataAndMins' },
+            { company: 'وي', name: '6,000 ميجا + 400 دقيقة', price: 140, type: 'dataOnly' },
+            { company: 'وي', name: '12,000 ميجا غير محدودة', price: 220, type: 'dataOnly' },
+          ];
+        }
+        
         localStorage.setItem('packages_cache_v2', JSON.stringify(this.allPackages));
         localStorage.setItem('packages_cache_time_v2', Date.now());
         
