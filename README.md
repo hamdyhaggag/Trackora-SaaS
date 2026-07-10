@@ -237,6 +237,6 @@ This project is proprietary software. All rights reserved.
 
 [![WhatsApp](https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://wa.me/201154620997)
 
-© 2025 Trackora. All Rights Reserved.
+© 2026 Trackora. All Rights Reserved.
 
 </div>
